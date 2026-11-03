@@ -1,5 +1,5 @@
 """The vendored apply_edit.py rebuilds edited tensors and checks their sha256 (synthetic files here; the real p50c
-rebuild, with the authors' hashes, runs in scripts/setup_autodl.sh)."""
+rebuild, with the authors' hashes, runs in scripts/setup.sh)."""
 import hashlib
 import importlib.util
 import json

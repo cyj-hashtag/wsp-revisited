@@ -24,4 +24,4 @@ How we use them:
   `mcqa` before importing it. The stub is only reached by `mathqa.loop_signals` / `mathqa.diagnostics`, which we do not
   call (it raises if called).
 - `apply_edit.py` + `st_numpy.py`: rebuild the p50c checkpoint bit for bit from the base model and
-  `exp8_math/runs/p50c/edit/`, checking the sha256 of every base and rebuilt tensor (`scripts/setup_autodl.sh`).
+  `exp8_math/runs/p50c/edit/`, checking the sha256 of every base and rebuilt tensor (`scripts/setup.sh`).

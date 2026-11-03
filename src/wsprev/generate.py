@@ -312,7 +312,7 @@ def gpu_info() -> dict:
 
 
 def resolve_model(name_or_path: str) -> tuple[str, Path, dict]:
-    """A model folder made by scripts/setup_autodl.sh ("base", "p50c" under $WSPREV_MODELS) or a path; its
+    """A model folder made by scripts/setup.sh ("base", "p50c" under $WSPREV_MODELS) or a path; its
     wsprev_model.json gives the name and the weight file's sha256."""
     p = Path(name_or_path)
     if not p.exists():

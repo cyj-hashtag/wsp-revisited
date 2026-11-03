@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wsprev"
+version = "0.1.0"
+description = "Revisiting Experiment 8 of 'Sparks of Weight-Space Programming' (Qwen3.5-0.8B on MATH-500)"
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]

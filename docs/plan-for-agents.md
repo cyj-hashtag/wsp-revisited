@@ -205,11 +205,12 @@ Gemma 基本不循环，只有 8.5% 的回答撞上限。Astra 没能提升它�
 
 - 所有配置：min_p 0，seed 0，max_tokens 32768。关思考的配置也用 32768，让各配置的截断口径一致；"在 8192 处截断"的情况可以从数据里直接算出来。
 - **D3 的规格**（规格写进 prereg，阈值只能在练习集上标定）：
-  1. 每次生成 1024 token，开 prefix caching 续写；
-  2. 每段生成后，在思考文本的最近 2048 个 token 里计算 dup8，即"在该窗口内此前已出现过的 8-gram"所占比例；
-  3. 满足以下任一条件就熔断：dup8 ≥ τ，或者总长度达到 30,720；
-  4. 熔断后追加 `\n</think>\n\n`，再用同样的采样参数生成最多 2048 token 作为答案；
-  5. 每条记录熔断位置和是否触发。
+  1. 思考作为**一个不中断的请求**生成（与 D0 是同一个请求），熔断器在思考每达到 1024 的整数倍 token 时检查一次；
+     - （2026-11-03 代理提议，**待用户确认**）原写法是"每次生成 1024 token，开 prefix caching 续写"。但 vLLM 的 presence penalty 只统计本请求自己生成的 token，分段续写会让惩罚每 1024 token 清零一次，D3 的思考就不再和 D0 相同。实现见 `src/wsprev/generate.py`（vLLM 的 step 循环），细节写进了 prereg 第 3 节。
+  2. 每个检查点，在思考文本的最近 2048 个 token 里计算 dup8，即"在该窗口内此前已出现过的 8-gram"所占比例；
+  3. 满足以下任一条件就熔断：dup8 ≥ τ，或者思考长度达到 30,720；
+  4. 熔断后追加 `\n</think>\n\n`，再用同样的采样参数生成最多 2048 token 作为答案；presence penalty 用 logit bias 延续到答案阶段（同上，待确认）；
+  5. 每条记录熔断位置、原因和是否触发。
   - τ 只在练习集的 DEV 子集上标定：取熔断后练习准确率最高的值，候选为 {0.3, 0.5, 0.7}。参考：Astra 统计的原始模型截断样本尾部 dup8 均值是 0.958。
 - **评测集与样本数**：
   - MATH-500 每题 2 个样本，GSM8K（1319 题）每题 1 个，IFEval（541 题）每题 2 个。
@@ -311,7 +312,8 @@ token 数按 [B] 里的平均生成长度估算；base 在 thinking 模式下几
 - 合计约 4.3 亿 token，加 20% 余量约 5 亿。
 - **吞吐量估计**（每张卡的 token/s，按显存带宽从 H200 的实测值折算，误差 ±50%，开工后先实测）：H20 约 11k，H800 约 9.5k，A800 约 5.5k，5090 约 4.7k，4090 约 2.5k。
 - **用卡**：用户计划在 AutoDL 租一张 H20 96G（备选 H800），在同一个实例上先用无卡模式装环境、下模型，再开 GPU。抢不到时，用同一台机器上的多张 4090 按题目分片跑。
-- **vLLM 设置**：bf16；`enable_prefix_caching=True`；`max_model_len = 32768 + 2048`；`gpu_memory_utilization = 0.9`；seed 0。版本先对齐第三方复现（vLLM 0.33.0、transformers 5.20.2、math-verify 0.9.0），对不上时记录实际版本。
+- **vLLM 设置**：bf16；`max_model_len = 32768 + 2048`；`gpu_memory_utilization = 0.9`；seed 0。版本先对齐第三方复现（vLLM 0.33.0、transformers 5.20.2、math-verify 0.9.0），对不上时记录实际版本。
+  - prefix caching：D3 改为不中断生成后不再需要；默认沿用作者 `evaluate.py` 的 vLLM 参数（不设），需要时用 `--vllm-arg enable_prefix_caching=true` 打开。
 - **分片**：按题目编号 i::k 切分，每片单独输出，支持断点续跑。实例中途掉线不能丢已完成的结果。
 - **国内网络**：模型从 ModelScope 或 hf-mirror 下载；AutoDL 上用 `source /etc/network_turbo` 打开学术加速。下载后对照 Hugging Face 上的哈希做校验。
 
@@ -326,16 +328,27 @@ wsp-revisited/
   docs/plan-for-agents.md   本文件
   docs/guide-for-me.md      给用户的操作指南（别改它的结构，只更新状态）
   prereg/criteria.md        RQ1 预注册，正式运行前提交
-  third_party/wsp_logs/     从 [B] 拷贝的 MIT 脚本（mathqa.py, apply_edit.py, st_numpy.py），附 LICENSE 和出处
+  third_party/wsp_logs/     从 [B] 拷贝的 MIT 脚本（mathqa.py, apply_edit.py, st_numpy.py），未修改，附 LICENSE 和出处
+  third_party/ifeval/       google-research 的 IFEval 官方检查器（Apache-2.0），改动见其 README
   src/wsprev/
     decoding.py             D0–D4，唯一定义处
-    generate.py             vLLM 生成，分块续写，循环熔断，分片和断点续跑
+    generate.py             vLLM 生成（每个样本一个请求，step 循环里做循环熔断），分片和断点续跑
     loopdetect.py           dup8 等重复度指标
     grade.py                调用 mathqa（math-verify）判分；IFEval 用官方检查器
+    data.py                 读 benchmark 和练习集划分
     edits.py                列掩码秩 1 编辑、随机对照、hook 版等价实现
-    directions.py           RQ2：读激活、求方向、给神经元打分
-    survival.py             Kaplan–Meier、分解、配对 bootstrap
-  scripts/                  直接可运行的入口（setup_autodl.sh, smoke.sh, run_rq1.sh, ...）
+    _vendor.py              载入 third_party 代码
+    directions.py           RQ2：读激活、求方向、给神经元打分（未写）
+    survival.py             Kaplan–Meier、分解、配对 bootstrap（未写）
+  scripts/
+    env.sh                  GPU 机器上的路径和环境变量（数据盘 /root/autodl-tmp/wsprev）
+    setup_autodl.sh         一次性准备：环境、作者日志仓库、模型下载与哈希校验、重建 p50c、benchmark
+    smoke.sh                M1：冒烟测试（smoke）和 D0 校准（calib）
+    build_p50c.py           原地重建 p50c（低内存，无卡模式可跑），逐张量 sha256 校验
+    verify_model.py         对照 Hugging Face 的哈希校验模型文件，写 wsprev_model.json
+    prepare_data.py         下载 MATH-500 / GSM8K / IFEval，记录数据集 revision 和哈希
+    make_splits.py          练习集划分 → results/splits.json（已生成并提交）
+    summarize.py            汇总准确率、截断率等，对照原文同题结果，检查校准闸门
   results/                  只放小型汇总（summary.json、每题一行的 CSV）；大文件不进库
   paper/                    LaTeX 源文件
   tests/
@@ -444,9 +457,10 @@ T0 = 用户宣布开工的时刻。
 
 ## 11. 进度表（完成后打勾，并注明日期和提交哈希）
 
-- [ ] M0 仓库骨架、`decoding.py`、`generate.py`（含 D3）、`grade.py`、测试
-- [ ] M0 `scripts/setup_autodl.sh`（装环境、下模型、校验哈希、用 `apply_edit.py` 重建 p50c）
-- [ ] M0 `prereg/criteria.md` 草案 → 用户确认 → 提交并推送（记下提交哈希）
+- [x] M0 仓库骨架、`decoding.py`、`generate.py`（含 D3）、`grade.py`、测试（2026-11-03，分支 `claude/m0-pipeline`；本地 CPU 测试全部通过，vLLM 部分还没在 GPU 上跑过）
+- [ ] M0 `scripts/setup_autodl.sh`（装环境、下模型、校验哈希、重建 p50c）：已写好，待在 AutoDL 上首次运行
+- [ ] M0 `prereg/criteria.md` 草案 → 用户确认 → 提交并推送（记下提交哈希）：草案已写（DRAFT），待用户确认顶部 5 个决定
+- [x] M0 练习集划分 `results/splits.json`（2026-11-03，种子 20261103；DEV 512 / HOLDOUT 256 / SELECT 128）
 - [ ] M1 冒烟测试通过（实测 token/s：___）
 - [ ] M1 D0 校准通过（base ___%，p50c ___%）
 - [ ] M2 RQ1 P0 完成 → `results/rq1_summary.md`

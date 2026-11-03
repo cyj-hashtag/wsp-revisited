@@ -106,8 +106,8 @@ git checkout claude/wonderful-archimedes-inple3
 - [ ] 镜像选 PyTorch + CUDA 12.x + Python 3.11 或 3.12。具体版本按 Claude 写的 `setup_autodl.sh` 的要求。
 - [ ] **用"无卡模式"开机**，这时几乎不收费。在这个模式下完成：
   - 打开学术加速：`source /etc/network_turbo`
-  - 克隆我们的仓库和作者的日志仓库
-  - 运行 `scripts/setup_autodl.sh`：装 vLLM、下载模型、校验哈希、重建编辑后的模型
+  - 把我们的仓库克隆到 `/root/autodl-tmp/wsp-revisited`。仓库目前是**私有**的，这台机器要先有访问权限：在 GitHub 仓库的 Settings → Deploy keys 里添加这台机器的 SSH 公钥（要推送结果就勾选写权限），或者用一个只限本仓库的 fine-grained token。作者的日志仓库由脚本自动克隆
+  - 运行 `bash scripts/setup_autodl.sh`：装 vLLM、下载模型、校验哈希、重建编辑后的模型、下载 benchmark、跑单元测试
   - 所有东西都放在**数据盘**（通常是 `/root/autodl-tmp`），系统盘很小
 - [ ] **养成习惯：任何长任务都在 tmux 里跑。** 这样 SSH 断了任务也不会停。用法见附录 C。
 

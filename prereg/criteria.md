@@ -1,19 +1,8 @@
 # Pre-registration: RQ1, is the baseline of Experiment 8 fair?
 
-**Status: DRAFT, not registered.** Registration is the commit that replaces this line with
-"REGISTERED on <date> by <author>"; that commit is pushed before any benchmark generation of RQ1, including the D0
-calibration run. After it, this file is only changed by dated amendments appended at the end, each with its reason.
-
-> **Decisions for the author before registration** (delete this box in the registration commit):
-> 1. Margins: H1 uses 30 percentage points (pp), H3 and H4 use m = 5 pp. Keep or change.
-> 2. H3 / H4 criterion. Proposed here: "the upper end of the Holm-adjusted one-sided confidence bound of the edit effect
->    is below m" (a non-inferiority test, which an underpowered run cannot pass by accident). The plan's first draft
->    was weaker: "the point estimate is below m, or the 95% CI contains 0". Choose one.
-> 3. D3 implementation (section 3): one uninterrupted generation watched by the breaker, and the presence penalty
->    carried into the answer. This replaces the plan's "generate 1,024 tokens at a time and continue with prefix
->    caching", which would reset vLLM's presence penalty every 1,024 tokens and so change D0's sampling. Confirm.
-> 4. tau calibration on the first 256 problems of DEV (base model, one sample each). Confirm the size.
-> 5. Base configuration for the cross comparison chosen among {D1, D2b, D3} (as in the plan's formula), not all five.
+**Status: REGISTERED on 2026-11-03 by cyj-hashtag (the author).** The text below was fixed by the commit that
+introduced this line, pushed to GitHub before any benchmark generation of RQ1, including the D0 calibration run.
+From then on, this file is only changed by dated amendments appended at the end, each with its reason.
 
 ## 1. Question
 

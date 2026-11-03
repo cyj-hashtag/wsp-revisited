@@ -1,0 +1,11 @@
+{
+ "rule": "most correct answers on the 128 practice SELECT problems (base, 1 sample); ties: D1, D2b, D3",
+ "problems": 128,
+ "correct": {
+  "D1": 39,
+  "D2b": 67,
+  "D3": 69
+ },
+ "tau": 0.7,
+ "choice": "D3"
+}

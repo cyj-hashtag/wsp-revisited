@@ -11,10 +11,13 @@ Run it once on a new machine, after scripts/setup.sh and before the smoke test.
   6  seeds: one request per sample with seed s + k gives the same tokens as one request with n samples and seed s
      (if not, D0's samples do not reuse the original evaluation's random streams: a warning, not an error)
   7  the D3 breaker end to end (tau = 0, so it fires at the first checkpoint unless the thinking closes before)
+  8  logit_bias acts on the logits before temperature, as the presence penalty does; D3 carries the presence penalty
+     into the answer as a logit bias (prereg section 3), which is equivalent only then
 Any FAIL: do not start the smoke test; send the output to Claude. Exit status 1 on FAIL.
 """
 import argparse
 import json
+import math
 import platform
 import sys
 import time
@@ -130,7 +133,37 @@ def main():
         details.append({k: rec[k] for k in ("problem_id", "loop_triggered", "trigger_pos", "answer_tokens",
                                              "n_gen_tokens", "finish_reason", "think_closed")})
     report("7 D3 breaker end to end", "PASS" if ok else "FAIL", f"{details} in {time.time() - t0:.0f} s")
+
+    # 8: the raw logit lead d of the most likely first token x over the second y, then 2,000 one-token samples at
+    # temperature T with logit bias b = -(d + 1) on x; the two orders predict log(p_x / p_y) values 1 + d apart
+    T = 0.5
+    raw = engine.llm.generate([{"prompt_token_ids": ids}],
+                              SamplingParams(temperature=1.0, max_tokens=1, logprobs=5, seed=0), use_tqdm=False)
+    (x, lx), (y, ly) = sorted(((t, lp.logprob) for t, lp in raw[0].outputs[0].logprobs[0].items()),
+                              key=lambda kv: -kv[1])[:2]
+    d = lx - ly
+    b = max(-100.0, -(d + 1.0))
+    out = engine.llm.generate([{"prompt_token_ids": ids}],
+                              SamplingParams(n=2000, temperature=T, top_p=1.0, max_tokens=1, seed=0,
+                                             logit_bias={int(x): b}), use_tqdm=False)
+    toks = [o.token_ids[0] for o in out[0].outputs]
+    report("8 logit_bias before temperature", *bias_order_verdict(d, b, T, toks.count(x), toks.count(y)))
     return finish(a.out, {"model": name, "gpu": gpu, "versions": versions(), "host": platform.node()})
+
+
+def bias_order_verdict(d, b, T, nx, ny):
+    """(status, detail) of check 8. With raw logit lead d of token x over token y, logit bias b on x and temperature
+    T, log(p_x / p_y) is (d + b) / T if the bias acts before temperature and d / T + b if it acts after."""
+    before, after = (d + b) / T, d / T + b
+    r = math.log((nx + 0.5) / (ny + 0.5))
+    se = math.sqrt(1 / (nx + 0.5) + 1 / (ny + 0.5))
+    detail = (f"log(n_x/n_y) = {r:.2f} +- {se:.2f} (n_x {nx}, n_y {ny}); predicted {before:.2f} if the bias acts "
+              f"before temperature, {after:.2f} if after")
+    if abs(r - before) < abs(r - after) and abs(r - before) <= 3 * se + 0.3:
+        return "PASS", detail
+    if abs(r - after) < abs(r - before):
+        return "FAIL", detail + " -> D3's carried presence penalty must be scaled by 1/T; fix before stage tau"
+    return "WARN", detail
 
 
 def finish(out, info=None):

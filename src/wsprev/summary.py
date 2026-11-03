@@ -89,14 +89,20 @@ def gate(model: str, m: dict) -> dict:
     return {"interval": [lo, hi], "pass": lo <= m["accuracy"] <= hi, "cut_about": GATES[model]["cut_about"]}
 
 
-def authors_accuracy(eval_dir, bench, problem_ids) -> dict | None:
-    """The original evaluation's accuracy on the same problems (all of its samples), from
-    <eval_dir>/parts/*/<bench>_per_problem.json of the authors' log repository."""
+def authors_per_problem(eval_dir, bench) -> dict[str, list[int]]:
+    """{problem id: correct (0/1 per sample)} of the original evaluation, from
+    <eval_dir>/parts/*/<bench>_per_problem.json of the authors' log repository (empty if there are none)."""
     per = {}
     for p in glob.glob(os.path.join(str(eval_dir), "parts", "*", f"{bench}_per_problem.json")):
         with open(p, encoding="utf-8") as f:
             for row in json.load(f):
                 per[row["id"]] = row["correct"]
+    return per
+
+
+def authors_accuracy(eval_dir, bench, problem_ids) -> dict | None:
+    """The original evaluation's accuracy on the same problems (all of its samples)."""
+    per = authors_per_problem(eval_dir, bench)
     common = [i for i in problem_ids if i in per]
     if not common:
         return None

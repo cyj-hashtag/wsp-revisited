@@ -1,0 +1,152 @@
+{
+ "method": "The authors' logs hold the full text of the first sample of 200 MATH-500, 200 GSM8K and 100 IFEval problems per model (exp8_math/eval/<unedited|p50c>/parts/*/<bench>_first_samples.jsonl.gz), generated with think35 = D0. Each text is re-tokenized with the model's tokenizer, which gives D0's length, and the registered D3 breaker (wsprev.decoding, wsprev.loopdetect) is replayed on its thinking tokens: D3 shares D0's thinking until the breaker fires, so this also gives D3's length for each tau. Only lengths and breaker positions are read, never correctness, so nothing here can inform a choice that the pre-registration fixes on practice problems.",
+ "answer_tokens": {
+  "low": 300,
+  "high": 2048
+ },
+ "assumed_no_think_tokens": {
+  "math500": 2500,
+  "gsm8k": 800,
+  "ifeval": 800
+ },
+ "per_sample": {
+  "base/math500": {
+   "texts": 200,
+   "D0": 30990.91,
+   "closed": 0.065,
+   "D3@0.3": {
+    "fired": 0.945,
+    "tokens_low": 5932.55,
+    "tokens_high": 7584.41
+   },
+   "D3@0.5": {
+    "fired": 0.935,
+    "tokens_low": 7938.645,
+    "tokens_high": 9573.025
+   },
+   "D3@0.7": {
+    "fired": 0.935,
+    "tokens_low": 9428.565,
+    "tokens_high": 11062.945
+   }
+  },
+  "base/gsm8k": {
+   "texts": 200,
+   "D0": 29764.16,
+   "closed": 0.105,
+   "D3@0.3": {
+    "fired": 0.91,
+    "tokens_low": 5364.52,
+    "tokens_high": 6955.2
+   },
+   "D3@0.5": {
+    "fired": 0.895,
+    "tokens_low": 6460.62,
+    "tokens_high": 8025.08
+   },
+   "D3@0.7": {
+    "fired": 0.895,
+    "tokens_low": 7336.14,
+    "tokens_high": 8900.6
+   }
+  },
+  "base/ifeval": {
+   "texts": 100,
+   "D0": 25273.09,
+   "closed": 0.25,
+   "D3@0.3": {
+    "fired": 0.77,
+    "tokens_low": 3801.47,
+    "tokens_high": 5147.43
+   },
+   "D3@0.5": {
+    "fired": 0.75,
+    "tokens_low": 4969.58,
+    "tokens_high": 6280.58
+   },
+   "D3@0.7": {
+    "fired": 0.75,
+    "tokens_low": 5563.5,
+    "tokens_high": 6874.5
+   }
+  },
+  "p50c/math500": {
+   "texts": 200,
+   "D0": 22077.02,
+   "closed": 0.76,
+   "D3@0.3": {
+    "fired": 0.715,
+    "tokens_low": 9811.97,
+    "tokens_high": 11061.79
+   },
+   "D3@0.5": {
+    "fired": 0.6,
+    "tokens_low": 15355.87,
+    "tokens_high": 16404.67
+   },
+   "D3@0.7": {
+    "fired": 0.415,
+    "tokens_low": 18487.03,
+    "tokens_high": 19212.45
+   }
+  },
+  "p50c/gsm8k": {
+   "texts": 200,
+   "D0": 12540.6,
+   "closed": 0.94,
+   "D3@0.3": {
+    "fired": 0.475,
+    "tokens_low": 8038.835,
+    "tokens_high": 8869.135
+   },
+   "D3@0.5": {
+    "fired": 0.32,
+    "tokens_low": 9377.54,
+    "tokens_high": 9936.9
+   },
+   "D3@0.7": {
+    "fired": 0.13,
+    "tokens_low": 10744.805,
+    "tokens_high": 10972.045
+   }
+  },
+  "p50c/ifeval": {
+   "texts": 100,
+   "D0": 3878.53,
+   "closed": 0.98,
+   "D3@0.3": {
+    "fired": 0.09,
+    "tokens_low": 3251.81,
+    "tokens_high": 3409.13
+   },
+   "D3@0.5": {
+    "fired": 0.06,
+    "tokens_low": 3354.55,
+    "tokens_high": 3459.43
+   },
+   "D3@0.7": {
+    "fired": 0.03,
+    "tokens_low": 3416.32,
+    "tokens_high": 3468.76
+   }
+  }
+ },
+ "stage_tokens": {
+  "calib (D0, MATH-500, 1 sample)": 26533965.0,
+  "tau (base, 256 DEV, 3 taus)": 6668961.279999999,
+  "select (base, 128 SELECT)": 5377191.359999999,
+  "rq1 math500 D1": 53067930.0,
+  "rq1 math500 D2a": 5000000,
+  "rq1 math500 D2b": 5000000,
+  "rq1 math500 D3": 30275395.0,
+  "rq1 gsm8k D1": 55799978.44,
+  "rq1 gsm8k D2a": 2110400,
+  "rq1 gsm8k D2b": 2110400,
+  "rq1 gsm8k D3": 26212018.755000003,
+  "rq1 ifeval D1": 31542052.84,
+  "rq1 ifeval D2a": 1731200,
+  "rq1 ifeval D2b": 1731200,
+  "rq1 ifeval D3": 11191407.32,
+  "all": 264352099.995
+ }
+}

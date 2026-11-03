@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # The registered pipeline, unattended, in order; it stops at the first failure (a FAIL, the calibration gate, an error):
 #   check_vllm -> smoke -> calib (gate) -> budget check -> tau -> choose tau --write -> select -> choose config -> rq1
+# (check_vllm is skipped when results/preflight.json already holds no FAIL; smoke's gate is informative only)
 # Run it inside tmux after scripts/setup.sh:
 #   tmux new -s run 'bash scripts/run_all.sh 2>&1 | tee -a $WSPREV_HOME/run_all.log'
 # Re-running is safe: run_stage.py continues where a stage stopped. `touch $WSPREV_HOME/STOP` stops it before the next
@@ -30,14 +31,22 @@ commit() {  # commit <message> <paths...>
 }
 
 stage check_vllm
-python scripts/check_vllm.py
-commit "GPU preflight: results/preflight.json" results/preflight.json
+if [ -f results/preflight.json ] && ! grep -q '"status": "FAIL"' results/preflight.json; then
+  echo "passed before: results/preflight.json"
+else
+  python scripts/check_vllm.py
+  commit "GPU preflight: results/preflight.json" results/preflight.json
+fi
 
-for s in smoke calib; do
-  stage "$s"
-  python scripts/run_stage.py "$s"
-  commit "Stage $s: summaries" "results/$s"
-done
+stage smoke
+# The gate is registered on all 500 problems (stage calib, which run_stage.py enforces). On smoke's 100 problems one
+# sample has an SE of about 5 pp, so the gate is only informative there and its exit status 3 does not stop the run.
+python scripts/run_stage.py smoke || [ $? -eq 3 ]
+commit "Stage smoke: summaries" results/smoke
+
+stage calib
+python scripts/run_stage.py calib
+commit "Stage calib: summaries" results/calib
 
 stage "budget check"
 python - "$BUDGET" "$PRICE" "$START" <<'EOF'

@@ -21,7 +21,13 @@ PRACTICE_FILES = ("gsm8k_train.jsonl", "math_train.jsonl")
 
 
 def home() -> Path:
-    return Path(os.environ.get("WSPREV_HOME", "/root/autodl-tmp/wsprev"))
+    """$WSPREV_HOME, else the same default as scripts/env.sh."""
+    if os.environ.get("WSPREV_HOME"):
+        return Path(os.environ["WSPREV_HOME"])
+    for disk, sub in (("/root/autodl-tmp", "wsprev"), ("/workspace", "wsprev")):
+        if Path(disk).is_dir():
+            return Path(disk) / sub
+    return Path.home() / "wsprev"
 
 
 def bench_dir() -> Path:

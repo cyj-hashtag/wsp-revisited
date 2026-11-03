@@ -60,7 +60,7 @@
 
 ### 1.4 准备本地的 Claude 会话
 
-- [ ] 把仓库克隆到你的电脑：
+- [x] 把仓库克隆到你的电脑（2026-11-03，`D:\WorkForClaude\WspRevised`；下面切分支那步已不需要，文档早已合并进 `main`）：
 
 ```bash
 git clone https://github.com/cyj-hashtag/wsp-revisited.git
@@ -78,11 +78,17 @@ git checkout claude/wonderful-archimedes-inple3
 
 - [ ] 如果你用的是网页版聊天而不是 Claude Code，就把 `docs/plan-for-agents.md` 的全文贴进第一条消息。
 
-### 1.5 AutoDL 账号
+### 1.5 选一个租卡平台
 
-- [ ] 注册并完成实名认证：<https://www.autodl.com/>
-- [ ] 充值 **300 元**。预计花 100–150 元，多出来的是余量。
-- [ ] 熟悉控制台的三个操作：租用实例、开机/关机、"无卡模式开机"。
+平台不限：AutoDL 等国内平台、RunPod / Vast.ai / Lambda 等国外平台、学校的服务器都可以。脚本只要求 Linux + NVIDIA GPU，不依赖某一家。选的时候对照这几条：
+
+- [ ] **GPU**：一张 80–96GB 的 H100 / H800 / H20 / H200 最省事，A100 80G 也行。预算紧就租同一台机器上的 2–4 张 RTX 4090 / 5090，脚本会按卡数自动分片。必须是 Ampere 或更新的架构（A100、30/40/50 系、H 系列）。
+- [ ] **驱动**：`nvidia-smi` 右上角显示的 CUDA 版本最好 ≥ 12.8（vLLM 0.33 需要较新的驱动）。拿不准就先开机看一眼。
+- [ ] **系统**：Linux（Ubuntu 22.04 / 24.04 都行），Python 3.10–3.13，能 `pip install`。
+- [ ] **硬盘**：数据盘 ≥ 80GB。
+- [ ] **网络**：能访问 GitHub。访问不了 Hugging Face 没关系，脚本会自动改用 hf-mirror。
+- [ ] **计费**：按小时计费、能随时关机。最好有"不带 GPU 也能开机"的模式（AutoDL 叫"无卡模式"），装环境时几乎不花钱。
+- [ ] **预算**：整个项目约 5 亿 token。按卡型估算的 GPU 小时：H20 约 13h，H800 / H100 约 15h，A800 / A100 约 25h，一张 5090 约 30h，一张 4090 约 55h（按显存带宽推算，误差 ±50%，冒烟测试后用实测值重算）。小时数乘以平台单价就是预算。**租卡和充值前先和 Claude 一起算好钱。**
 
 ---
 
@@ -92,8 +98,8 @@ git checkout claude/wonderful-archimedes-inple3
 
 **和本地 Claude 一起**：
 
-- [ ] 告诉 Claude"开工了"，让它开始做 M0：代码、环境脚本、预注册文件。
-- [ ] **审阅 `prereg/criteria.md`**，这是你作为作者要拍板的。至少确认这三点：
+- [x] 告诉 Claude"开工了"，让它开始做 M0：代码、环境脚本、预注册文件。（2026-11-03 完成）
+- [x] **审阅 `prereg/criteria.md`**，这是你作为作者要拍板的。（2026-11-03 已确认并注册，提交哈希见 plan 第 11 节）至少确认这三点：
   - 主指标是 MATH-500；
   - 两个阈值（30pp 和 5pp）合不合理；
   - 三种可能的结论各怎么写。
@@ -102,13 +108,13 @@ git checkout claude/wonderful-archimedes-inple3
 
 **租卡**（我修正一下之前的建议：直接租主力卡，不用先租 4090 调试。在同一个实例上用无卡模式装环境，省掉迁移的麻烦；调试多花的 GPU 钱只有十几块）：
 
-- [ ] 租一个 **H20 96G** 单卡实例，按量计费。没有 H20 就租 **H800 80G**。都没有，就租同一台机器上的 **2–4 张 4090**。
-- [ ] 镜像选 PyTorch + CUDA 12.x + Python 3.11 或 3.12。具体版本按 Claude 写的 `setup_autodl.sh` 的要求。
-- [ ] **用"无卡模式"开机**，这时几乎不收费。在这个模式下完成：
-  - 打开学术加速：`source /etc/network_turbo`
-  - 把我们的仓库克隆到 `/root/autodl-tmp/wsp-revisited`。仓库目前是**私有**的，这台机器要先有访问权限：在 GitHub 仓库的 Settings → Deploy keys 里添加这台机器的 SSH 公钥（要推送结果就勾选写权限），或者用一个只限本仓库的 fine-grained token。作者的日志仓库由脚本自动克隆
-  - 运行 `bash scripts/setup_autodl.sh`：装 vLLM、下载模型、校验哈希、重建编辑后的模型、下载 benchmark、跑单元测试
-  - 所有东西都放在**数据盘**（通常是 `/root/autodl-tmp`），系统盘很小
+- [ ] 按 1.5 的要求租一台：能选就选单张 80–96GB 的卡（H20 / H800 / H100），否则同一台机器上的 **2–4 张 4090 / 5090**。按量计费。
+- [ ] 镜像选 Ubuntu + CUDA 12.8 以上 + Python 3.10–3.12（脚本自己装 vLLM，不用镜像里的 PyTorch）。
+- [ ] 平台有"不带 GPU 开机"的模式（AutoDL 的**无卡模式**）就先用它，这时几乎不收费；没有就直接开机。完成：
+  - （仅 AutoDL）打开学术加速：`source /etc/network_turbo`
+  - 把我们的仓库克隆到**数据盘**（AutoDL 是 `/root/autodl-tmp/wsp-revisited`；其他平台放在空间最大的盘上）。仓库目前是**私有**的，这台机器要先有访问权限：在 GitHub 仓库的 Settings → Deploy keys 里添加这台机器的 SSH 公钥（要推送结果就勾选写权限），或者用一个只限本仓库的 fine-grained token。作者的日志仓库由脚本自动克隆
+  - 运行 `bash scripts/setup.sh 2>&1 | tee setup.log`：检查 Python / 硬盘 / 网络，装 vLLM，下载模型并校验哈希，重建编辑后的模型，下载 benchmark，跑单元测试
+  - 大文件都放在**数据盘**。脚本会自动找：AutoDL 的 `/root/autodl-tmp`、RunPod 的 `/workspace`，否则用户主目录。也可以先 `export WSPREV_HOME=<大盘上的目录>` 再运行
 - [ ] **养成习惯：任何长任务都在 tmux 里跑。** 这样 SSH 断了任务也不会停。用法见附录 C。
 
 **你的数学任务**（等环境装好的空当里做）：
@@ -117,9 +123,10 @@ git checkout claude/wonderful-archimedes-inple3
 
 ### 2.2 T0+3h 到 T0+5h：冒烟测试（最关键的检查点）
 
-- [ ] 关机，再用**有卡模式**开机。
+- [ ] 关机，再用**有卡模式**开机（没有无卡模式的平台跳过这步）。
   - 注意：如果这台机器的卡正好全被别人租走，可能开不了机，所以尽早开。
-- [ ] 按 Claude 给的命令跑冒烟测试：base 和编辑后的模型，各做 100 道 MATH-500。
+- [ ] 先跑 GPU 自检，几分钟：`python scripts/check_vllm.py`。有 FAIL 就停下，把输出发给 Claude。
+- [ ] 在 tmux 里跑冒烟测试：`python scripts/run_stage.py smoke`。base 和编辑后的模型各做 100 道 MATH-500，有几张卡就自动分几片。
 - [ ] 看结果是否落在下面的区间：
 
 | 模型 | 正确率应在 | 截断率应约为 |
@@ -129,12 +136,16 @@ git checkout claude/wonderful-archimedes-inple3
 
   - 100 题的样本小，偏一点没关系；完整的 500 题校准会再确认一次。
 - [ ] **对不上就停下来**，把输出贴给 Claude 排查，不要往下跑。评测流程有问题时，后面跑得越多浪费越多。
-- [ ] 记下**实测的 token/s**，告诉 Claude，让它重新估算 RQ1 要多久。
+- [ ] 记下**实测的 token/s**（冒烟测试最后会打印），告诉 Claude，让它重新估算 RQ1 要多久。
   - 如果实测比预估（H20 约每秒 1.1 万）慢一倍以上，考虑加一张卡。加卡前先和 Claude 算好钱。
+- [ ] 冒烟测试没问题，再跑完整的 D0 校准：`python scripts/run_stage.py calib`（500 题，接着冒烟测试的结果继续跑）。校准没通过，后面的步骤脚本会拒绝运行。
 
 ### 2.3 T0+5h 到 T0+16h：让 RQ1 跑一整夜
 
-- [ ] 在 tmux 里启动 RQ1 全量任务。
+- [ ] 在 tmux 里按顺序跑。每步跑完，把 `results/` 下新增的小文件提交并推送，再告诉 Claude：
+  1. `python scripts/run_stage.py tau`，然后 `python scripts/choose.py tau --write`：在练习题上定下 D3 的阈值 τ；
+  2. `python scripts/run_stage.py select`，然后 `python scripts/choose.py config`：在练习题上选出 base 的最好配置；
+  3. `python scripts/run_stage.py rq1`：RQ1 全量（先跑 MATH-500，再跑 GSM8K、IFEval）。
 - [ ] **睡前检查五件事**：
   1. `nvidia-smi`：显存基本占满、GPU 利用率不是 0；
   2. `tail -f` 日志在持续增长；
@@ -152,7 +163,7 @@ git checkout claude/wonderful-archimedes-inple3
 
 ### 3.1 早上：看 RQ1，定论文叙事
 
-- [ ] 让 Claude 生成 `results/rq1_summary.md`，和它一起**对照预注册的标准**做判定。结论只能是三种之一：
+- [ ] 让 Claude 生成 `results/rq1_summary.md`（命令：`python -m wsprev.rq1`），和它一起**对照预注册的标准**做判定。结论只能是三种之一：
   1. **"增益主要来自终止失败"**：循环熔断或 non-thinking 模式就能追平；
   2. **"编辑在公平基线下仍有实质增益"**；
   3. **"部分成立"**：如实报告各项效应的大小。

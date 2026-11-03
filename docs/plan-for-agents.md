@@ -206,10 +206,10 @@ Gemma 基本不循环，只有 8.5% 的回答撞上限。Astra 没能提升它�
 - 所有配置：min_p 0，seed 0，max_tokens 32768。关思考的配置也用 32768，让各配置的截断口径一致；"在 8192 处截断"的情况可以从数据里直接算出来。
 - **D3 的规格**（规格写进 prereg，阈值只能在练习集上标定）：
   1. 思考作为**一个不中断的请求**生成（与 D0 是同一个请求），熔断器在思考每达到 1024 的整数倍 token 时检查一次；
-     - （2026-11-03 代理提议，**待用户确认**）原写法是"每次生成 1024 token，开 prefix caching 续写"。但 vLLM 的 presence penalty 只统计本请求自己生成的 token，分段续写会让惩罚每 1024 token 清零一次，D3 的思考就不再和 D0 相同。实现见 `src/wsprev/generate.py`（vLLM 的 step 循环），细节写进了 prereg 第 3 节。
+     - （2026-11-03 代理提议，**用户已确认并写入注册的 prereg**）原写法是"每次生成 1024 token，开 prefix caching 续写"。但 vLLM 的 presence penalty 只统计本请求自己生成的 token，分段续写会让惩罚每 1024 token 清零一次，D3 的思考就不再和 D0 相同。实现见 `src/wsprev/generate.py`（vLLM 的 step 循环），细节见 prereg 第 3 节。
   2. 每个检查点，在思考文本的最近 2048 个 token 里计算 dup8，即"在该窗口内此前已出现过的 8-gram"所占比例；
   3. 满足以下任一条件就熔断：dup8 ≥ τ，或者思考长度达到 30,720；
-  4. 熔断后追加 `\n</think>\n\n`，再用同样的采样参数生成最多 2048 token 作为答案；presence penalty 用 logit bias 延续到答案阶段（同上，待确认）；
+  4. 熔断后追加 `\n</think>\n\n`，再用同样的采样参数生成最多 2048 token 作为答案；presence penalty 用 logit bias 延续到答案阶段（同上，已确认）；
   5. 每条记录熔断位置、原因和是否触发。
   - τ 只在练习集的 DEV 子集上标定：取熔断后练习准确率最高的值，候选为 {0.3, 0.5, 0.7}。参考：Astra 统计的原始模型截断样本尾部 dup8 均值是 0.958。
 - **评测集与样本数**：
@@ -221,15 +221,15 @@ Gemma 基本不循环，只有 8.5% 的回答撞上限。Astra 没能提升它�
   - p50c 应在 [43%, 55%] 之间，截断率约 33%。
   - 落在区间外就**停下来查评测流程**：vLLM 版本、chat template、enable_thinking、提示字符串、math-verify 版本、用纯文本版还是多模态 checkpoint。查清楚之前不跑 RQ1 全量。
 
-**预注册的比较**（主指标：MATH-500 准确率，按题配对；次要指标：GSM8K、IFEval）。下面的阈值是草案，**提交前请用户拍板**。
+**预注册的比较**（主指标：MATH-500 准确率，按题配对；次要指标：GSM8K、IFEval）。**已注册（2026-11-03），以 `prereg/criteria.md` 为准**；下面是初稿，与注册版不同处已注明。
 
 - 编辑效应 Δ_c = Acc(p50c, c) − Acc(base, c)，c ∈ {D0, D1, D2b, D3}。
   - H1（复现）：Δ_D0 ≥ 30pp。
   - H2：Δ_D1 < Δ_D0，即换成官方参数后增益变小。
-  - H3：Δ_D3 < 5pp，或其 95% CI 包含 0，即循环熔断能替代编辑。
-  - H4：Δ_D2b < 5pp，或其 95% CI 包含 0，即在默认的 non-thinking 模式下编辑没有增益。
-- 交叉比较：Acc(p50c, D0) − max_{c∈{D1, D2b, D3}} Acc(base, c)。
-  - "base 的最好配置"要在练习集的 HOLDOUT 子集（128 题）上选定，**不能在 benchmark 上选**，否则有选择偏差。
+  - H3：Δ_D3 < 5pp，即循环熔断能替代编辑。初稿写的是"或其 95% CI 包含 0"；注册版改为非劣效检验：单侧 bootstrap p = P*(Δ*_D3 ≥ 5pp)，Holm 校正后 < 0.05 才算成立。
+  - H4：Δ_D2b < 5pp，即在默认的 non-thinking 模式下编辑没有增益；判据同 H3。
+- 交叉比较：Acc(p50c, D0) − Acc(base, c*)，c* 是 base 在 {D1, D2b, D3} 中最好的配置。
+  - c* 在练习集的 SELECT 子集（128 题，`results/splits.json`）上选定，**不能在 benchmark 上选**，否则有选择偏差。
 - 统计方法：
   - 对题目做配对 bootstrap，10,000 次，报 95% CI；
   - 对 H2–H4 三个检验做 Holm 校正；
@@ -311,7 +311,7 @@ token 数按 [B] 里的平均生成长度估算；base 在 thinking 模式下几
 
 - 合计约 4.3 亿 token，加 20% 余量约 5 亿。
 - **吞吐量估计**（每张卡的 token/s，按显存带宽从 H200 的实测值折算，误差 ±50%，开工后先实测）：H20 约 11k，H800 约 9.5k，A800 约 5.5k，5090 约 4.7k，4090 约 2.5k。
-- **用卡**：用户计划在 AutoDL 租一张 H20 96G（备选 H800），在同一个实例上先用无卡模式装环境、下模型，再开 GPU。抢不到时，用同一台机器上的多张 4090 按题目分片跑。
+- **用卡**：平台未定（2026-11-03 用户：还没租，打算另找平台）。脚本已改为平台无关（Linux + NVIDIA，Ampere 及以上），选卡要求和按卡型的 GPU 小时估算见 guide 1.5。首选单张 80–96GB 的卡（H20 / H800 / H100）；有"无卡模式"的平台先用它装环境、下模型。否则用同一台机器上的多张 4090 / 5090，`run_stage.py` 按卡数自动分片。
 - **vLLM 设置**：bf16；`max_model_len = 32768 + 2048`；`gpu_memory_utilization = 0.9`；seed 0。版本先对齐第三方复现（vLLM 0.33.0、transformers 5.20.2、math-verify 0.9.0），对不上时记录实际版本。
   - prefix caching：D3 改为不中断生成后不再需要；默认沿用作者 `evaluate.py` 的 vLLM 参数（不设），需要时用 `--vllm-arg enable_prefix_caching=true` 打开。
 - **分片**：按题目编号 i::k 切分，每片单独输出，支持断点续跑。实例中途掉线不能丢已完成的结果。
@@ -338,12 +338,16 @@ wsp-revisited/
     data.py                 读 benchmark 和练习集划分
     edits.py                列掩码秩 1 编辑、随机对照、hook 版等价实现
     _vendor.py              载入 third_party 代码
+    summary.py              读输出目录、汇总指标、校准闸门（summarize.py / run_stage.py / rq1.py 共用）
+    rq1.py                  RQ1 的注册分析：配对 bootstrap、Holm、结论措辞；τ 和交叉比较配置的选择规则
     directions.py           RQ2：读激活、求方向、给神经元打分（未写）
-    survival.py             Kaplan–Meier、分解、配对 bootstrap（未写）
+    survival.py             Kaplan–Meier、分解（未写）
   scripts/
-    env.sh                  GPU 机器上的路径和环境变量（数据盘 /root/autodl-tmp/wsprev）
-    setup_autodl.sh         一次性准备：环境、作者日志仓库、模型下载与哈希校验、重建 p50c、benchmark
-    smoke.sh                M1：冒烟测试（smoke）和 D0 校准（calib）
+    env.sh                  GPU 机器上的路径和环境变量（自动找数据盘：AutoDL、/workspace，否则 ~/wsprev）
+    setup.sh                一次性准备（平台无关）：检查、环境、作者日志仓库、模型下载与哈希校验、重建 p50c、benchmark
+    check_vllm.py           GPU 自检：logit_bias、abort、种子约定、D3 熔断端到端
+    run_stage.py            按阶段跑：smoke、calib、tau、select、rq1；自动按 GPU 数分片，检查前置条件
+    choose.py               在练习题上选 τ（可写回 decoding.py）和交叉比较的 base 配置
     build_p50c.py           原地重建 p50c（低内存，无卡模式可跑），逐张量 sha256 校验
     verify_model.py         对照 Hugging Face 的哈希校验模型文件，写 wsprev_model.json
     prepare_data.py         下载 MATH-500 / GSM8K / IFEval，记录数据集 revision 和哈希
@@ -379,7 +383,7 @@ T0 = 用户宣布开工的时刻。
 
 | 里程碑 | 时间 | 内容 | 闸门 |
 |---|---|---|---|
-| M0 | T0+3h | 冒烟测试所需代码、`scripts/setup_autodl.sh`、`prereg/criteria.md` 推送完毕 | 用户审阅并确认 prereg |
+| M0 | T0+3h | 冒烟测试所需代码、`scripts/setup.sh`、`prereg/criteria.md` 推送完毕 | 用户审阅并确认 prereg |
 | M1 | T0+5h | 冒烟测试与 D0 校准 | 落在 §3 的校准区间内，否则停下排查 |
 | M2 | T0+16h | RQ1 的 P0 部分完成，写出 `results/rq1_summary.md` | 和用户一起对照 prereg 定下叙事 |
 | M3 | T0+30h | RQ2 完成 | — |
@@ -457,10 +461,12 @@ T0 = 用户宣布开工的时刻。
 
 ## 11. 进度表（完成后打勾，并注明日期和提交哈希）
 
-- [x] M0 仓库骨架、`decoding.py`、`generate.py`（含 D3）、`grade.py`、测试（2026-11-03，`5fcf9f0`，分支 `claude/m0-pipeline`；本地 CPU 测试全部通过，vLLM 部分还没在 GPU 上跑过）
-- [ ] M0 `scripts/setup_autodl.sh`（装环境、下模型、校验哈希、重建 p50c）：已写好，待在 AutoDL 上首次运行
-- [ ] M0 `prereg/criteria.md` 草案 → 用户确认 → 提交并推送（记下提交哈希）：草案已写（DRAFT），待用户确认顶部 5 个决定
-- [x] M0 练习集划分 `results/splits.json`（2026-11-03，`5fcf9f0`，种子 20261103；DEV 512 / HOLDOUT 256 / SELECT 128）
+- [x] M0 仓库骨架、`decoding.py`、`generate.py`（含 D3）、`grade.py`、测试（2026-11-03，`4d3fe37`；本地 CPU 测试全部通过，vLLM 部分还没在 GPU 上跑过）
+- [x] M0 练习集划分 `results/splits.json`（2026-11-03，`4d3fe37`，种子 20261103；DEV 512 / HOLDOUT 256 / SELECT 128）
+- [x] M0 跑阶段的脚本、GPU 自检、τ / 配置选择、RQ1 注册分析代码（2026-11-03，与注册同一个 PR）
+- [ ] M0 `scripts/setup.sh`（平台无关：装环境、下模型、校验哈希、重建 p50c）：已写好，待在 GPU 机器上首次运行
+- [x] M0 `prereg/criteria.md` 用户确认（2026-11-03，5 个决定全部按草案建议）→ 注册提交：见下一行
+- [ ] M0 注册提交哈希：（待填）
 - [ ] M1 冒烟测试通过（实测 token/s：___）
 - [ ] M1 D0 校准通过（base ___%，p50c ___%）
 - [ ] M2 RQ1 P0 完成 → `results/rq1_summary.md`

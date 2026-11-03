@@ -23,10 +23,13 @@ def test_d0_is_think35():
     assert {k: sp[k] for k in THINK35} == THINK35 and decoding.D0.thinking
 
 
-def test_d3_needs_calibrated_tau():
-    assert decoding.D3_TAU is None
+def test_d3_needs_calibrated_tau(monkeypatch):
+    assert decoding.D3_TAU is None or decoding.D3_TAU in decoding.TAU_CANDIDATES
+    monkeypatch.setattr(decoding, "D3_TAU", None)
     with pytest.raises(ValueError):
         decoding.get("D3")
+    monkeypatch.setattr(decoding, "D3_TAU", 0.7)
+    assert decoding.get("D3").name == "D3" and decoding.get("D3").breaker.tau == 0.7
     c = decoding.get("D3@0.5")
     b = c.breaker
     assert (b.tau, b.max_think, b.every, b.window, b.ngram, b.answer_tokens) == (0.5, 30720, 1024, 2048, 8, 2048)

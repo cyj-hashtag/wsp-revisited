@@ -319,6 +319,7 @@ token 数由 `scripts/estimate_tokens.py` 估算（2026-11-04），结果在 `re
 - **评估过但不采用的提速办法**：FP8 KV cache（改变数值，和原评测不再可比）；用 Qwen3.5 自带的 MTP 头做 speculative decoding（理论上分布不变，但和 presence penalty、logit bias 一起时 vLLM 是否严格等价，事先无法验证）；三个 $\tau$ 共用一条思考流（只省约 3.5M token）。
 - **用卡**（2026-11-04）：AutoDL 无卡。比价站 gpuprice.dev（2026-11-03 23:15）：3090 晨涧云 ¥0.80、恒源云 ¥0.99、智星云 ¥1.10；4090 算家云 ¥1.24、晨涧云 ¥1.38，均标"充足"，以平台页面为准。有"无卡模式"的平台先用它装环境、下模型。
 - **vLLM 设置**：bf16；`max_model_len = 32768 + 2048`；`gpu_memory_utilization = 0.9`；seed 0。版本先对齐第三方复现（vLLM 0.33.0、transformers 5.20.2、math-verify 0.9.0），对不上时记录实际版本。
+  - 硬条件（2026-11-04 在 PyPI 核实）：vLLM 0.33.0 要求 Python ≥ 3.11，固定 torch 2.14.0；这一版 torch 是 CUDA 13 构建，所以驱动要支持 CUDA 13.0（R580+），GPU 至少 sm_75，bf16 要 sm_80+。V100 / P100 / T4 不能用。vLLM 0.33.0 没有 CUDA 12 构建（0.32.0 还有 `+cu129`）；万一租不到 R580 驱动的机器，退路是 vLLM 0.32.0+cu129，但这偏离了注册的版本，要先写 Amendment。
   - prefix caching：D3 改为不中断生成后不再需要；默认沿用作者 `evaluate.py` 的 vLLM 参数（不设），需要时用 `--vllm-arg enable_prefix_caching=true` 打开。
 - **分片**：按题目编号 i::k 切分，每片单独输出，支持断点续跑。实例中途掉线不能丢已完成的结果。
 - **国内网络**：模型从 ModelScope 或 hf-mirror 下载；AutoDL 上用 `source /etc/network_turbo` 打开学术加速。下载后对照 Hugging Face 上的哈希做校验。机器访问不了 GitHub 时（作者日志仓库、NLTK 的 punkt_tab 都在 GitHub 上），由代理从用户电脑用 scp 拷过去。

@@ -23,5 +23,6 @@ How we use them:
   `mathqa.py` imports `mcqa.loop_signals` from the authors' private package; `grade.py` registers a stub module named
   `mcqa` before importing it. The stub is only reached by `mathqa.loop_signals` / `mathqa.diagnostics`, which we do not
   call (it raises if called).
-- `apply_edit.py` + `st_numpy.py`: rebuild the p50c checkpoint bit for bit from the base model and
-  `exp8_math/runs/p50c/edit/`, checking the sha256 of every base and rebuilt tensor (`scripts/setup.sh`).
+- `apply_edit.py` + `st_numpy.py`: `scripts/build_p50c.py` (run by `scripts/setup.sh`) rebuilds the p50c checkpoint
+  bit for bit from the base model and `exp8_math/runs/p50c/edit/` with `apply_edit.rebuild` and the same sha256
+  checks of every base and rebuilt tensor as `apply_edit.main`, but patches the file in place to need little memory.

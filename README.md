@@ -8,7 +8,7 @@ Work in progress.
 
 - Plan for coding agents: [docs/plan-for-agents.md](docs/plan-for-agents.md)
 - Step-by-step guide for the author: [docs/guide-for-me.md](docs/guide-for-me.md)
-- Pre-registration of RQ1 (draft): [prereg/criteria.md](prereg/criteria.md)
+- Pre-registration of RQ1 (registered 2026-11-03, Amendment 1 the same day): [prereg/criteria.md](prereg/criteria.md)
 
 ## Layout
 

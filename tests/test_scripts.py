@@ -46,3 +46,9 @@ def test_git_blob_sha1_matches_upstream_blob_id():
     # third_party/wsp_logs/README.md lists the upstream git blob of each vendored file
     assert v.git_blob_sha1(REPO / "third_party" / "wsp_logs" / "mathqa.py") == "808a04776906b1cf4630d397cef54f03d8795477"
     assert json.dumps(v.HF_FILES)  # the pinned manifest is well formed
+
+
+@pytest.mark.parametrize("nx, ny, status", [(135, 1000, "PASS"), (1000, 135, "FAIL"), (500, 500, "WARN")])
+def test_bias_order_verdict(nx, ny, status):
+    # d = 3, b = -4, T = 0.5: log(p_x/p_y) = -2 if the bias acts before temperature, +2 if after
+    assert script("check_vllm").bias_order_verdict(3.0, -4.0, 0.5, nx, ny)[0] == status

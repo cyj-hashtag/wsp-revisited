@@ -467,6 +467,8 @@ T0 = 用户宣布开工的时刻。
 - [ ] M0 `scripts/setup.sh`（平台无关：装环境、下模型、校验哈希、重建 p50c）：已写好，待在 GPU 机器上首次运行
 - [x] M0 `prereg/criteria.md` 用户确认（2026-11-03，5 个决定全部按草案建议）→ 注册提交：见下一行
 - [x] M0 注册提交：`d06c4750112c2526ebb006f78ef94c48d6e525dc`（2026-11-03，作者 cyj-hashtag；之后 prereg 只能追加带日期的 Amendment）
+- [x] M0 prereg Amendment 1（2026-11-03，用户审阅后要求；任何生成之前）：公式改为 LaTeX、加符号表、澄清 D3 的 token 上限和若干措辞；补上第 5 节登记了但 `rq1.py` 没算的 GSM8K / IFEval 效应量（`5b5edf2`）。公式已用 GitHub 渲染接口和 MathJax 3.2.2 逐个核对
+- [ ] 仓库公开（用户 2026-11-03 要求；待选公开方式，见会话）
 - [ ] M1 冒烟测试通过（实测 token/s：___）
 - [ ] M1 D0 校准通过（base ___%，p50c ___%）
 - [ ] M2 RQ1 P0 完成 → `results/rq1_summary.md`

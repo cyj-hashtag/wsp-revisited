@@ -473,13 +473,14 @@ T0 = 用户宣布开工的时刻。
 - [x] M0 仓库骨架、`decoding.py`、`generate.py`（含 D3）、`grade.py`、测试（2026-11-03，`4d3fe37`；本地 CPU 测试全部通过，vLLM 部分还没在 GPU 上跑过）
 - [x] M0 练习集划分 `results/splits.json`（2026-11-03，`4d3fe37`，种子 20261103；DEV 512 / HOLDOUT 256 / SELECT 128）
 - [x] M0 跑阶段的脚本、GPU 自检、τ / 配置选择、RQ1 注册分析代码（2026-11-03，与注册同一个 PR）
-- [ ] M0 `scripts/setup.sh`（平台无关：装环境、下模型、校验哈希、重建 p50c）：已写好，待在 GPU 机器上首次运行
+- [x] M0 `scripts/setup.sh`（平台无关：装环境、下模型、校验哈希、重建 p50c）：2026-11-04 在恒源云 2 × 3090 上首次跑通（vLLM 0.33.0、transformers 5.20.2、torch 2.14.0、math-verify 0.9.0；p50c 改动 65,260 + 64,928 = 130,188 个元素，哈希一致；80 个单元测试通过）。机器上 GitHub 克隆失败，作者日志和 NLTK punkt_tab 由本地 scp 过去
 - [x] M0 `prereg/criteria.md` 用户确认（2026-11-03，5 个决定全部按草案建议）→ 注册提交：见下一行
 - [x] M0 注册提交：`d06c4750112c2526ebb006f78ef94c48d6e525dc`（2026-11-03，作者 cyj-hashtag；之后 prereg 只能追加带日期的 Amendment）
 - [x] M0 prereg Amendment 1（2026-11-03，用户审阅后要求；任何生成之前）：公式改为 LaTeX、加符号表、澄清 D3 的 token 上限和若干措辞；补上第 5 节登记了但 `rq1.py` 没算的 GSM8K / IFEval 效应量（`5b5edf2`）。公式已用 GitHub 渲染接口和 MathJax 3.2.2 逐个核对
 - [x] 仓库公开（2026-11-04，用户要求）：旧私有仓库改名为 `cyj-hashtag/wsp-revisited-archive`（保持私有），新建同名公开仓库，只推送 `main`，提交哈希不变（注册提交仍是 `d06c475`）。原因：GitHub 仍保存旧仓库里改写前的提交，直接公开会暴露。GPU 机器不放 GitHub 凭据，结果拷回本地提交
-- [ ] M1 冒烟测试通过（实测 token/s：___）
-- [ ] M1 D0 校准通过（base ___%，p50c ___%）
+- [x] M1 GPU 自检 8 项全部 PASS（2026-11-04，`923a8f3`，`results/preflight.json`）
+- [x] M1 冒烟测试（2026-11-04，`d99a6ed`，`results/smoke/`）：base 7.0%（截断 94.0%）；p50c 57.0%（SE 5.0，截断 25.0%），比区间上限 55% 高 2pp，流程因此停下。同 100 题上原评测为 53.2%，逐题配对差 +3.8pp（SE 3.6），按原评测的对题数分层也无系统偏差 → 判为小样本波动。注册的闸门在 500 题的 calib 上（`run_stage.py` 也只在 calib 上强制），所以 `run_all.sh` 改为 smoke 的闸门只作参考（`0bb1d7f`）。实测 token/s：每卡 2,468（base）/ 2,586（p50c）
+- [x] M1 D0 校准通过（2026-11-04，`7633431`，`results/calib/`）：base 8.2%（SE 1.2，截断 92.6%；原评测 7.9%），p50c 51.0%（SE 2.2，截断 29.8%；原评测 48.1%，第三方复现 51.0%）。两卡合计 4,896 token/s；预算检查：已花约 ¥8，剩余 P0 约 15.2 小时 ≈ ¥46
 - [ ] M2 RQ1 P0 完成 → `results/rq1_summary.md`
 - [ ] M2 与用户确定叙事分支
 - [ ] M3 RQ2 完成

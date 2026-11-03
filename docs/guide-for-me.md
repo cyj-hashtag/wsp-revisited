@@ -112,7 +112,7 @@ git checkout claude/wonderful-archimedes-inple3
 - [ ] 镜像选 Ubuntu + CUDA 12.8 以上 + Python 3.10–3.12（脚本自己装 vLLM，不用镜像里的 PyTorch）。
 - [ ] 平台有"不带 GPU 开机"的模式（AutoDL 的**无卡模式**）就先用它，这时几乎不收费；没有就直接开机。完成：
   - （仅 AutoDL）打开学术加速：`source /etc/network_turbo`
-  - 把我们的仓库克隆到**数据盘**（AutoDL 是 `/root/autodl-tmp/wsp-revisited`；其他平台放在空间最大的盘上）。仓库目前是**私有**的，这台机器要先有访问权限：在 GitHub 仓库的 Settings → Deploy keys 里添加这台机器的 SSH 公钥（要推送结果就勾选写权限），或者用一个只限本仓库的 fine-grained token。作者的日志仓库由脚本自动克隆
+  - 把我们的仓库克隆到**数据盘**（AutoDL 是 `/root/autodl-tmp/wsp-revisited`；其他平台放在空间最大的盘上）。仓库已公开（2026-11-04），直接克隆，不需要任何凭据；结果小文件由 Claude 拷回本地电脑再提交，GPU 机器上不放 GitHub 凭据。作者的日志仓库由脚本自动克隆
   - 运行 `bash scripts/setup.sh 2>&1 | tee setup.log`：检查 Python / 硬盘 / 网络，装 vLLM，下载模型并校验哈希，重建编辑后的模型，下载 benchmark，跑单元测试
   - 大文件都放在**数据盘**。脚本会自动找：AutoDL 的 `/root/autodl-tmp`、RunPod 的 `/workspace`，否则用户主目录。也可以先 `export WSPREV_HOME=<大盘上的目录>` 再运行
 - [ ] **养成习惯：任何长任务都在 tmux 里跑。** 这样 SSH 断了任务也不会停。用法见附录 C。
@@ -195,7 +195,7 @@ git checkout claude/wonderful-archimedes-inple3
 ### 3.4 发布（第 2 天结束）
 
 - [ ] **先给原作者发邮件**，附上稿子，告诉他们你打算在哪天公开（模板见附录 A）。
-- [ ] 把 GitHub 仓库设为公开。
+- [x] 把 GitHub 仓库设为公开。（2026-11-04 提前公开，当时只有代码和预注册，没有结果）
 - [ ] 把 PDF 上传到 **Zenodo**（<https://zenodo.org>），拿到 DOI。不需要背书，马上生效。
 - [ ] 背书到位后提交 arXiv，并在 arXiv 版本里注明 Zenodo 的 DOI。
 - [ ] 可选：在 X 或知乎发帖介绍结果，语气平和，附上代码链接。

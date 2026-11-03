@@ -25,8 +25,8 @@ Work in progress.
 
 ## On the GPU machine (any Linux host with an NVIDIA GPU)
 
-The repository is private until release, so the GPU machine needs its own access, for example a deploy key of this
-repository (Settings → Deploy keys) or a fine-grained token limited to it. Requirements and cost estimates per GPU
+The repository is public, so the GPU machine clones it without credentials; small result files are copied back and
+committed elsewhere, so no GitHub credential is needed on the GPU machine. Requirements and cost estimates per GPU
 type: `docs/guide-for-me.md`, section 1.5.
 
 ```bash

@@ -117,7 +117,7 @@ git checkout claude/wonderful-archimedes-inple3
   - （仅 AutoDL）打开学术加速：`source /etc/network_turbo`
   - 把我们的仓库克隆到**数据盘**（AutoDL 是 `/root/autodl-tmp/wsp-revisited`；其他平台放在空间最大的盘上）。仓库已公开（2026-11-04），直接克隆，不需要任何凭据；结果小文件由 Claude 拷回本地电脑再提交，GPU 机器上不放 GitHub 凭据。作者的日志仓库由脚本自动克隆
   - 运行 `bash scripts/setup.sh 2>&1 | tee setup.log`：检查 Python / 硬盘 / 网络，装 vLLM，下载模型并校验哈希，重建编辑后的模型，下载 benchmark，跑单元测试
-  - 大文件都放在**数据盘**。脚本会自动找：AutoDL 的 `/root/autodl-tmp`、RunPod 的 `/workspace`，否则用户主目录。也可以先 `export WSPREV_HOME=<大盘上的目录>` 再运行
+  - 大文件都放在**数据盘**。脚本会自动找：AutoDL 的 `/root/autodl-tmp`、恒源云的 `/hy-tmp`（关机超过 24 小时会被清空）、RunPod 的 `/workspace`，否则用户主目录。也可以先 `export WSPREV_HOME=<大盘上的目录>` 再运行
 - [ ] **养成习惯：任何长任务都在 tmux 里跑。** 这样 SSH 断了任务也不会停。用法见附录 C。
 
 **你的数学任务**（等环境装好的空当里做）：

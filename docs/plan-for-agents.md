@@ -350,7 +350,7 @@ wsp-revisited/
     directions.py           RQ2：读激活、求方向、给神经元打分（未写）
     survival.py             Kaplan–Meier、分解（未写）
   scripts/
-    env.sh                  GPU 机器上的路径和环境变量（自动找数据盘：AutoDL、/workspace，否则 ~/wsprev）
+    env.sh                  GPU 机器上的路径和环境变量（自动找数据盘：AutoDL、恒源云 /hy-tmp、/workspace，否则 ~/wsprev）
     setup.sh                一次性准备（平台无关）：检查、环境、作者日志仓库、模型下载与哈希校验、重建 p50c、benchmark
     check_vllm.py           GPU 自检：logit_bias、abort、种子约定、D3 熔断端到端
     run_stage.py            按阶段跑：smoke、calib、tau、select、rq1；自动按 GPU 数分片，检查前置条件

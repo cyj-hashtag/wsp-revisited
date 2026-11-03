@@ -15,7 +15,8 @@
 #   5. p50c rebuilt from the base weights and the authors' edit; every edited tensor checked against their sha256
 #   6. MATH-500, GSM8K test and IFEval -> $WSPREV_BENCH, with dataset revisions and file hashes
 #   7. unit tests
-# Paths: scripts/env.sh ($WSPREV_HOME: /root/autodl-tmp/wsprev on AutoDL, /workspace/wsprev where /workspace exists,
+# Paths: scripts/env.sh ($WSPREV_HOME: /root/autodl-tmp/wsprev on AutoDL, /hy-tmp/wsprev on gpushare.com,
+# /workspace/wsprev where /workspace exists,
 # else ~/wsprev; set WSPREV_HOME before running to choose another disk).
 set -euo pipefail
 cd "$(dirname "$0")/.."

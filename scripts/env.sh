@@ -3,6 +3,8 @@
 if [ -z "${WSPREV_HOME:-}" ]; then
   if [ -d /root/autodl-tmp ]; then
     WSPREV_HOME=/root/autodl-tmp/wsprev          # AutoDL data disk
+  elif [ -d /hy-tmp ]; then
+    WSPREV_HOME=/hy-tmp/wsprev                   # gpushare.com (恒源云) instance disk; wiped 24 h after shutdown
   elif [ -d /workspace ]; then
     WSPREV_HOME=/workspace/wsprev                # RunPod and similar container hosts
   else

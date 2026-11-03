@@ -24,7 +24,7 @@ def home() -> Path:
     """$WSPREV_HOME, else the same default as scripts/env.sh."""
     if os.environ.get("WSPREV_HOME"):
         return Path(os.environ["WSPREV_HOME"])
-    for disk, sub in (("/root/autodl-tmp", "wsprev"), ("/workspace", "wsprev")):
+    for disk, sub in (("/root/autodl-tmp", "wsprev"), ("/hy-tmp", "wsprev"), ("/workspace", "wsprev")):
         if Path(disk).is_dir():
             return Path(disk) / sub
     return Path.home() / "wsprev"

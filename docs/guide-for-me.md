@@ -145,7 +145,7 @@ git checkout claude/wonderful-archimedes-inple3
 
 ### 2.3 T0+5h 到 T0+16h：让 RQ1 跑一整夜
 
-- [ ] 在 tmux 里按顺序跑。每步跑完，把 `results/` 下新增的小文件提交并推送，再告诉 Claude：
+- [ ] 在 tmux 里按顺序跑。每步跑完，把 `results/` 下新增的小文件提交并推送，再告诉 Claude（2026-11-04 起由 `scripts/run_all.sh` 无人值守地一口气跑完下面三步，出错或超预算就停；Claude 负责把结果拷回本地提交）：
   1. `python scripts/run_stage.py tau`，然后 `python scripts/choose.py tau --write`：在练习题上定下 D3 的阈值 τ；
   2. `python scripts/run_stage.py select`，然后 `python scripts/choose.py config`：在练习题上选出 base 的最好配置；
   3. `python scripts/run_stage.py rq1`：RQ1 全量（先跑 MATH-500，再跑 GSM8K、IFEval）。

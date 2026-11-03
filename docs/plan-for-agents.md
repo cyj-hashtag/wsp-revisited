@@ -355,6 +355,7 @@ wsp-revisited/
     setup.sh                一次性准备（平台无关）：检查、环境、作者日志仓库、模型下载与哈希校验、重建 p50c、benchmark
     check_vllm.py           GPU 自检：logit_bias、abort、种子约定、D3 熔断端到端
     run_stage.py            按阶段跑：smoke、calib、tau、select、rq1；自动按 GPU 数分片，检查前置条件
+    run_all.sh              无人值守按顺序跑完 自检 → smoke → calib → 预算检查 → tau → select → rq1，出错即停，每阶段在本机提交小结果
     choose.py               在练习题上选 τ（可写回 decoding.py）和交叉比较的 base 配置
     build_p50c.py           原地重建 p50c（低内存，无卡模式可跑），逐张量 sha256 校验
     verify_model.py         对照 Hugging Face 的哈希校验模型文件，写 wsprev_model.json

@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.venv/
+
+# Local tool settings
+.claude/settings.local.json
+
+# Large or generated files stay out of git (plan section 1, rule 7):
+# model weights, raw generations and benchmark copies live on the GPU machine's data disk.
+runs/
+data/
+models/
+*.safetensors
+*.npz
+*.npy
+*.pt
+*.bin
+*.jsonl.gz

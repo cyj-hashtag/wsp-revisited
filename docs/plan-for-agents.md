@@ -457,10 +457,10 @@ T0 = 用户宣布开工的时刻。
 
 ## 11. 进度表（完成后打勾，并注明日期和提交哈希）
 
-- [x] M0 仓库骨架、`decoding.py`、`generate.py`（含 D3）、`grade.py`、测试（2026-11-03，分支 `claude/m0-pipeline`；本地 CPU 测试全部通过，vLLM 部分还没在 GPU 上跑过）
+- [x] M0 仓库骨架、`decoding.py`、`generate.py`（含 D3）、`grade.py`、测试（2026-11-03，`5fcf9f0`，分支 `claude/m0-pipeline`；本地 CPU 测试全部通过，vLLM 部分还没在 GPU 上跑过）
 - [ ] M0 `scripts/setup_autodl.sh`（装环境、下模型、校验哈希、重建 p50c）：已写好，待在 AutoDL 上首次运行
 - [ ] M0 `prereg/criteria.md` 草案 → 用户确认 → 提交并推送（记下提交哈希）：草案已写（DRAFT），待用户确认顶部 5 个决定
-- [x] M0 练习集划分 `results/splits.json`（2026-11-03，种子 20261103；DEV 512 / HOLDOUT 256 / SELECT 128）
+- [x] M0 练习集划分 `results/splits.json`（2026-11-03，`5fcf9f0`，种子 20261103；DEV 512 / HOLDOUT 256 / SELECT 128）
 - [ ] M1 冒烟测试通过（实测 token/s：___）
 - [ ] M1 D0 校准通过（base ___%，p50c ___%）
 - [ ] M2 RQ1 P0 完成 → `results/rq1_summary.md`

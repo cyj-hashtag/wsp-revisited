@@ -1,0 +1,29 @@
+{
+ "method": "The authors' log repository holds the full text of the first sample of 100 IFEval problems per model\n(exp8_math/eval/<unedited|p50c>/parts/*/ifeval_first_samples.jsonl.gz, generated with think35 = D0) and their\nper-problem results (ifeval_per_problem.json). The original grader (the private package weightenv) is not public, so\nRQ1 grades IFEval with the official google-research checkers (third_party/ifeval, src/wsprev/grade.py). This script\ngrades the authors' texts with ours and counts the problems where the two disagree. CPU only.",
+ "models": {
+  "base": {
+   "texts": 100,
+   "original_pass": 20,
+   "ours_pass": 20,
+   "agree": 100,
+   "differ": []
+  },
+  "p50c": {
+   "texts": 100,
+   "original_pass": 58,
+   "ours_pass": 59,
+   "agree": 99,
+   "differ": [
+    {
+     "id": "ifeval_1389",
+     "original": 0,
+     "ours": 1,
+     "instructions": [
+      "change_case:english_capital",
+      "keywords:letter_frequency"
+     ]
+    }
+   ]
+  }
+ }
+}

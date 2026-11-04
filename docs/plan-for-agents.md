@@ -356,6 +356,7 @@ wsp-revisited/
     setup.sh                一次性准备（平台无关）：检查、环境、作者日志仓库、模型下载与哈希校验、重建 p50c、benchmark
     check_vllm.py           GPU 自检：logit_bias、abort、种子约定、D3 熔断端到端
     run_stage.py            按阶段跑：smoke、calib、tau、select、rq1；自动按 GPU 数分片，检查前置条件
+    check_ifeval_grader.py  用我们的 IFEval 判分器重判作者公开的 IFEval 文本，和原评测逐题对照 → results/ifeval_grader_check.json
     run_all.sh              无人值守按顺序跑完 自检 → smoke → calib → 预算检查 → tau → select → rq1，出错即停，每阶段在本机提交小结果
     choose.py               在练习题上选 τ（可写回 decoding.py）和交叉比较的 base 配置
     build_p50c.py           原地重建 p50c（低内存，无卡模式可跑），逐张量 sha256 校验
@@ -484,6 +485,7 @@ T0 = 用户宣布开工的时刻。
 - [x] M1 D0 校准通过（2026-11-04，`7633431`，`results/calib/`）：base 8.2%（SE 1.2，截断 92.6%；原评测 7.9%），p50c 51.0%（SE 2.2，截断 29.8%；原评测 48.1%，第三方复现 51.0%）。两卡合计 4,896 token/s；预算检查：已花约 ¥8，剩余 P0 约 15.2 小时 ≈ ¥46
 - [x] tau / select（2026-11-04，`f7493e4` / `3da1ef8`）：三个 τ 在练习 DEV 前 256 题上都答对 138 题 → 按规则取较大的 τ = 0.7（逐题对错并不相同，平手是巧合）；SELECT 上 D3 53.9%、D2b 52.3%、D1 30.5% → 交叉比较用 D3
 - [x] RQ1 中断与修复（2026-11-04）：11:14 p50c 的 D3（MATH-500）一个答案请求带 1,054 个 logit bias，超过 vLLM 0.33.0 的 1,024 上限，引擎退出。`a43c1aa` 用 `_vllm_ext.py` 把上限提到 32,768，自检加第 9 项；重跑自检 9/9 通过，第 1–8 项输出与修复前一致。12:25 断点续跑，之前的结果都不受影响。用户要求记为 prereg **Amendment 2**（同日，见 prereg 末尾，也记了 smoke 闸门一事和 Amendment 1 以来的全部代码改动）
+- [x] IFEval 判分器对照（2026-11-04，`results/ifeval_grader_check.json`，`python scripts/check_ifeval_grader.py`）：重判作者公开的每模型 100 道 IFEval 第一样本，base 100/100、p50c 99/100 与原评测一致；唯一不同的 `ifeval_1389`（全大写 + 字母 o ≥ 40 次）是官方检查器先转小写再计数。起因：base 在 D1 下 IFEval 58.8%，高于 card 的官方分数（thinking 44.0、non-thinking 52.1）；card 的 IFEval 协议 TODO(verify)
 - [ ] M2 RQ1 P0 完成 → `results/rq1_summary.md`
 - [ ] M2 与用户确定叙事分支
 - [ ] M3 RQ2 完成

@@ -1,0 +1,25 @@
+{
+ "throughput": {
+  "tokens": 1668677,
+  "seconds": 344.2193877696991,
+  "tokens_per_s": 4847.713578284652
+ },
+ "groups": {
+  "p50c/D2b/gsm8k": {
+   "problems": 1319,
+   "samples": 1319,
+   "accuracy": 0.5663381349507203,
+   "accuracy_se": 0.013650728047064674,
+   "cut_share": 0.0,
+   "mean_tokens": 1265.1076573161486,
+   "accuracy_finished": 0.5663381349507203,
+   "accuracy_cut": null,
+   "think_closed_share": null,
+   "breaker_share": 0.0,
+   "breaker_mean_pos": null,
+   "no_answer_share": 0.000758150113722517,
+   "mean_dup8_tail": 0.044801630605758765,
+   "grade_errors": 0
+  }
+ }
+}

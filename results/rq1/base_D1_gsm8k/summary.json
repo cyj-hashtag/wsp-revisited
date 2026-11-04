@@ -1,0 +1,25 @@
+{
+ "throughput": {
+  "tokens": 34506300,
+  "seconds": 15109.403125047684,
+  "tokens_per_s": 2283.7632773724213
+ },
+ "groups": {
+  "base/D1/gsm8k": {
+   "problems": 1319,
+   "samples": 1319,
+   "accuracy": 0.33813495072024263,
+   "accuracy_se": 0.01303082914517221,
+   "cut_share": 0.6413949962092494,
+   "mean_tokens": 26160.95526914329,
+   "accuracy_finished": 0.9365750528541226,
+   "accuracy_cut": 0.0035460992907801418,
+   "think_closed_share": 0.38514025777103866,
+   "breaker_share": 0.0,
+   "breaker_mean_pos": null,
+   "no_answer_share": 0.640636846095527,
+   "mean_dup8_tail": 0.6000224912812945,
+   "grade_errors": 0
+  }
+ }
+}

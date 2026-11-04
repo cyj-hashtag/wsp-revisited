@@ -51,12 +51,17 @@
   {
    "check": "7 D3 breaker end to end",
    "status": "PASS",
-   "detail": "[{'problem_id': 'test/precalculus/807.json', 'loop_triggered': True, 'trigger_pos': 1024, 'answer_tokens': 580, 'n_gen_tokens': 1607, 'finish_reason': 'stop', 'think_closed': False}, {'problem_id': 'test/intermediate_algebra/1994.json', 'loop_triggered': True, 'trigger_pos': 1024, 'answer_tokens': 2048, 'n_gen_tokens': 3075, 'finish_reason': 'length', 'think_closed': False}] in 9 s"
+   "detail": "[{'problem_id': 'test/precalculus/807.json', 'loop_triggered': True, 'trigger_pos': 1024, 'answer_tokens': 580, 'n_gen_tokens': 1607, 'finish_reason': 'stop', 'think_closed': False}, {'problem_id': 'test/intermediate_algebra/1994.json', 'loop_triggered': True, 'trigger_pos': 1024, 'answer_tokens': 2048, 'n_gen_tokens': 3075, 'finish_reason': 'length', 'think_closed': False}] in 10 s"
   },
   {
    "check": "8 logit_bias before temperature",
    "status": "PASS",
    "detail": "log(n_x/n_y) = -2.37 +- 0.08 (n_x 170, n_y 1830); predicted -2.00 if the bias acts before temperature, -0.13 if after"
+  },
+  {
+   "check": "9 logit_bias with many tokens",
+   "status": "PASS",
+   "detail": "30,724 biased tokens accepted; greedy first token 8160 -> 760"
   }
  ]
 }

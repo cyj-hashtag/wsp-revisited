@@ -201,3 +201,41 @@ problems; no GPU had been rented yet. The text as registered is in commit `d06c4
 3. **Analysis code.** At the registration commit, `src/wsprev/rq1.py` did not compute the secondary effects that
    section 5 registers. Commit `5b5edf2f07eb8e916457b228f24e9be1597c07b7` adds them, with the bootstrap above and no
    tests; the registered tests are unchanged. No other code that affects RQ1 results has changed.
+
+### Amendment 2 (2026-11-04)
+
+Made at the author's request during stage rq1, after a failure of the generation code. It changes no model,
+configuration, procedure, threshold, test or conclusion; it records a code fix that lets the registered D3 rule run
+as written, and one event during the calibration.
+
+1. **D3 could not carry the presence penalty of a long thinking.** Section 3, item 3 gives every token id of the kept
+   thinking and of the closing string a logit bias of $-1.5$. vLLM 0.33.0 accepts at most 1,024 logit-bias entries per
+   request (`MAX_NUM_LOGIT_BIAS_TOKENS` in `vllm/v1/worker/gpu/sample/logit_bias.py`). On 2026-11-04 at 11:14
+   (UTC+8), in stage rq1 (p50c, D3, MATH-500, shard 0 of 2), an answer request carried 1,054 entries; vLLM rejected
+   it ("Too many logit bias tokens: 1054. The max size is 1024."), its engine stopped, and so did the run.
+   - **Fix:** commit `a43c1aa928a59d0862b98940a6e21c84cd350076` adds `src/wsprev/_vllm_ext.py`, which vLLM loads in
+     its worker process as the worker extension class (`worker_extension_cls`, passed by `wsprev.generate`). It raises
+     the limit to 32,768, which is more than the at most $30720 + 3$ ids of a kept thinking and the closing string. The
+     limit only sizes vLLM's per-request bias buffers and the block of its bias kernel; the bias added to the logits
+     is the same.
+   - **Check:** `scripts/check_vllm.py` has a check 9: 30,724 biases on one request, the last of which bans the greedy
+     first token; it passes only if every bias is applied. After the fix all nine checks passed, and checks 1 to 8 gave
+     the same output as before it, apart from timings (the same tokens and, in check 8, the same counts of 2,000
+     samples) (`results/preflight.json`).
+   - **Results already generated are unaffected.** Before the fix, D3 had run in stage tau (base, each $\tau$, the
+     first 256 practice DEV problems), in stage select (base, the 128 SELECT problems) and in stage rq1 on MATH-500:
+     base (all 1,000 samples) and p50c (shard 1, 500 samples; shard 0, 369 of 500). vLLM accepted every request behind
+     these recorded samples, so each carried at most 1,024 biases, and the fix would not have changed it. The other
+     131 samples of p50c's shard 0, the failed one included, were generated after the fix with their registered seeds.
+     When the fix was made, no accuracy or other outcome of p50c under D3 had been computed or looked at.
+2. **The smoke test, before the calibration.** On MATH-500's first 100 problems (D0, one sample) p50c scored 57.0%
+   (SE 5.0 pp), above the gate's upper bound of 55%, and the script stopped. Section 4 registers the gate on the
+   calibration run, D0 with one sample on each of MATH-500's 500 problems, so the pipeline was not changed: on the same 100 problems the original evaluation scored 53.2% (paired
+   difference +3.8 pp, SE 3.6 pp), and the calibration on all 500 problems then passed for both models (base 8.2%,
+   p50c 51.0%; `results/calib/`). The script `scripts/run_all.sh` that runs the stages in order now treats the gate on
+   the smoke test's 100 problems as informative only (commit `0bb1d7f`).
+3. **Other code changes since Amendment 1**, none of which affects RQ1 results: `D3_TAU = 0.7` in
+   `src/wsprev/decoding.py`, written by `scripts/choose.py tau --write` under the procedure of section 3 (commit
+   `f7493e4`); the data-disk path of one more GPU platform (`scripts/env.sh`, `src/wsprev/data.py`); checks of the
+   Python version, tools and driver in `scripts/setup.sh`; comments in `requirements-gpu.txt` (the versions are
+   unchanged); `scripts/estimate_tokens.py` (a cost estimate); `scripts/run_all.sh`; and check 9 above.

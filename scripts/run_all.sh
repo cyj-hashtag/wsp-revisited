@@ -41,8 +41,13 @@ fi
 stage smoke
 # The gate is registered on all 500 problems (stage calib, which run_stage.py enforces). On smoke's 100 problems one
 # sample has an SE of about 5 pp, so the gate is only informative there and its exit status 3 does not stop the run.
-python scripts/run_stage.py smoke || [ $? -eq 3 ]
-commit "Stage smoke: summaries" results/smoke
+# Smoke and calib share their run folders, so once calib has run, summarizing smoke again would read 500 problems.
+if [ -d results/calib ]; then
+  echo "calib has run: smoke is not summarized again (results/smoke keeps its 100 problems)"
+else
+  python scripts/run_stage.py smoke || [ $? -eq 3 ]
+  commit "Stage smoke: summaries" results/smoke
+fi
 
 stage calib
 python scripts/run_stage.py calib

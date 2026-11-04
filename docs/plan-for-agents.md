@@ -493,3 +493,14 @@ T0 = 用户宣布开工的时刻。
 - [ ] M5 初稿完成（`paper/`）
 - [ ] M5 用户改写与数字核对完成
 - [ ] M6 邮件原作者 / GitHub 公开 / Zenodo / arXiv
+
+### 交接：2026-11-05 之后的下一步
+
+写于 RQ1 完成当晚，供新会话接手。用户明天全天都在：用户希望代理在后台写代码、测试 RQ2 和 RQ3，自己同时学习原理。
+
+1. **讲解会话**（`llm-tutor`，只读，陪用户学原理）：开它时要求过"RQ1 没做完不要对 H1–H4 下结论"。现在注册分析已经完成，经用户同意后告诉它：可以带用户逐行读 `results/rq1_summary.md`。用户的自测问题有三个：base 在 D0 下为什么只有 8%；D2b 下 $\Delta = 2.3$ pp 为什么不能说"小于 5 pp"；D2a 下编辑在三个 benchmark 上都让模型变差，这可能说明什么。
+2. **RQ3（不需要 GPU，先做）**：写 `src/wsprev/survival.py` 和测试：Kaplan–Meier + Greenwood、Nelson–Aalen、两因素 Shapley 分解、预算曲线 $\mathrm{Acc}(L)$。定义见第 3 节 RQ3。数据在本地 `runs/gpushare_2026-11-04/runs_records.tgz`（不进 git，sha256 见同目录；解到 `runs/` 下即可，`.gitignore` 已排除）。记录字段见第 5 节。D0 的逐样本长度只有 MATH-500 有（我们自己的 calib，每题 1 个样本）；GSM8K、IFEval 的 D0 只有原评测的逐题对错。小结果写进 `results/rq3/`，图另放。数学部分由用户主导。
+3. **RQ2（需要 GPU）**：按第 3 节写 `src/wsprev/directions.py` 和对应的 stage。需要先让 base 按 D0 在练习 DEV 的 512 题上生成（约 16M token）。RQ2 没有预注册（prereg 只覆盖 RQ1），建议在跑之前把 RQ2 的选择规则写成文件并推送，以示事先确定。开机前先估算：精简版约 2–3 小时、¥6–10，完整版约 8 小时、¥25；问用户选哪个。
+4. **机器**：恒源云实例（上次是 `ssh -p 24389 root@i-2.gpushare.com`，重开后地址可能变，问用户要新地址；密钥 `~/.ssh/id_ed25519_wsprev`）。2026-11-04 20:10 CST 之后关机；`/hy-tmp` 在关机 24 小时后清空，清空后要重跑 `scripts/setup.sh`：先用 scp 把作者日志的 git bundle 和 NLTK punkt_tab 传过去，因为机器上 `git clone` GitHub 会失败，也访问不了 raw.githubusercontent.com。代码写好再开机，开机即按 ¥3/时计费。到 2026-11-04 共花约 ¥56，上限 ¥150。控制台的监控图不可靠，以 `nvidia-smi` 为准。
+5. **Git**：本地分支 `claude/gpushare` 比 `origin` 多 8 个提交，还没推送；也还没合并进 `main`。推送和合并都要用户同意。推送时用 `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push`，确保用的是 cyj-hashtag 的凭据。
+6. **待核实**：model card 的 IFEval 评测协议（base 在 D1 下 IFEval 58.8%，高于 card 的 thinking 44.0；D2b 52.7% 与 card 的 non-thinking 52.1 接近）；第 7 节列出的全部引用。

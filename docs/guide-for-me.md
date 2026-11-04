@@ -111,14 +111,14 @@ git checkout claude/wonderful-archimedes-inple3
 
 **租卡**（我修正一下之前的建议：直接租主力卡，不用先租 4090 调试。在同一个实例上用无卡模式装环境，省掉迁移的麻烦；调试多花的 GPU 钱只有十几块）：
 
-- [ ] 按 1.5 的要求租一台：能选就选单张 80–96GB 的卡（H20 / H800 / H100），否则同一台机器上的 **2–4 张 4090 / 5090**。按量计费。
-- [ ] 镜像选 Ubuntu 22.04 / 24.04；云服务器选带 CUDA 的那个（为了驱动），Python 不用管。开机后先运行 `nvidia-smi`，确认右上角 CUDA Version ≥ 13.0（见 1.5）。
-- [ ] 平台有"不带 GPU 开机"的模式（AutoDL 的**无卡模式**）就先用它，这时几乎不收费；没有就直接开机。完成：
+- [x] 按 1.5 的要求租一台：能选就选单张 80–96GB 的卡（H20 / H800 / H100），否则同一台机器上的 **2–4 张 4090 / 5090**。按量计费。（2026-11-04：恒源云同一台机器上 2 × RTX 3090，¥3.0/时）
+- [x] 镜像选 Ubuntu 22.04 / 24.04；云服务器选带 CUDA 的那个（为了驱动），Python 不用管。开机后先运行 `nvidia-smi`，确认右上角 CUDA Version ≥ 13.0（见 1.5）。（驱动 580.178.04，CUDA 13.0）
+- [x] 平台有"不带 GPU 开机"的模式（AutoDL 的**无卡模式**）就先用它，这时几乎不收费；没有就直接开机。完成（这次直接开机装的环境，没用无卡模式；数据盘是 `/hy-tmp`）：
   - （仅 AutoDL）打开学术加速：`source /etc/network_turbo`
   - 把我们的仓库克隆到**数据盘**（AutoDL 是 `/root/autodl-tmp/wsp-revisited`；其他平台放在空间最大的盘上）。仓库已公开（2026-11-04），直接克隆，不需要任何凭据；结果小文件由 Claude 拷回本地电脑再提交，GPU 机器上不放 GitHub 凭据。作者的日志仓库由脚本自动克隆
   - 运行 `bash scripts/setup.sh 2>&1 | tee setup.log`：检查 Python / 硬盘 / 网络，装 vLLM，下载模型并校验哈希，重建编辑后的模型，下载 benchmark，跑单元测试
   - 大文件都放在**数据盘**。脚本会自动找：AutoDL 的 `/root/autodl-tmp`、恒源云的 `/hy-tmp`（关机超过 24 小时会被清空）、RunPod 的 `/workspace`，否则用户主目录。也可以先 `export WSPREV_HOME=<大盘上的目录>` 再运行
-- [ ] **养成习惯：任何长任务都在 tmux 里跑。** 这样 SSH 断了任务也不会停。用法见附录 C。
+- [x] **养成习惯：任何长任务都在 tmux 里跑。** 这样 SSH 断了任务也不会停。用法见附录 C。
 
 **你的数学任务**（等环境装好的空当里做）：
 
@@ -126,11 +126,11 @@ git checkout claude/wonderful-archimedes-inple3
 
 ### 2.2 T0+3h 到 T0+5h：冒烟测试（最关键的检查点）
 
-- [ ] 关机，再用**有卡模式**开机（没有无卡模式的平台跳过这步）。
+- [x] 关机，再用**有卡模式**开机（没有无卡模式的平台跳过这步）。（这次一直是有卡模式，跳过）
   - 注意：如果这台机器的卡正好全被别人租走，可能开不了机，所以尽早开。
-- [ ] 先跑 GPU 自检，几分钟：`python scripts/check_vllm.py`。有 FAIL 就停下，把输出发给 Claude。
-- [ ] 在 tmux 里跑冒烟测试：`python scripts/run_stage.py smoke`。base 和编辑后的模型各做 100 道 MATH-500，有几张卡就自动分几片。
-- [ ] 看结果是否落在下面的区间：
+- [x] 先跑 GPU 自检，几分钟：`python scripts/check_vllm.py`。有 FAIL 就停下，把输出发给 Claude。（2026-11-04：9 项全部 PASS）
+- [x] 在 tmux 里跑冒烟测试：`python scripts/run_stage.py smoke`。base 和编辑后的模型各做 100 道 MATH-500，有几张卡就自动分几片。
+- [x] 看结果是否落在下面的区间：
 
 | 模型 | 正确率应在 | 截断率应约为 |
 |---|---|---|
@@ -138,14 +138,14 @@ git checkout claude/wonderful-archimedes-inple3
 | 编辑后（p50c） | 43%–55% | 33% |
 
   - 100 题的样本小，偏一点没关系；完整的 500 题校准会再确认一次。
-- [ ] **对不上就停下来**，把输出贴给 Claude 排查，不要往下跑。评测流程有问题时，后面跑得越多浪费越多。
-- [ ] 记下**实测的 token/s**（冒烟测试最后会打印），告诉 Claude，让它重新估算 RQ1 要多久。
+- [x] **对不上就停下来**，把输出贴给 Claude 排查，不要往下跑。评测流程有问题时，后面跑得越多浪费越多。（2026-11-04：p50c 在 100 题上得 57%，比上限高 2pp；逐题对照原评测后判为小样本波动，500 题的校准通过。见 prereg Amendment 2）
+- [x] 记下**实测的 token/s**（冒烟测试最后会打印），告诉 Claude，让它重新估算 RQ1 要多久。（实测每卡约 2,450–2,600 token/s，两卡合计 4,896）
   - 如果实测比预估（H20 约每秒 1.1 万）慢一倍以上，考虑加一张卡。加卡前先和 Claude 算好钱。
-- [ ] 冒烟测试没问题，再跑完整的 D0 校准：`python scripts/run_stage.py calib`（500 题，接着冒烟测试的结果继续跑）。校准没通过，后面的步骤脚本会拒绝运行。
+- [x] 冒烟测试没问题，再跑完整的 D0 校准：`python scripts/run_stage.py calib`（500 题，接着冒烟测试的结果继续跑）。校准没通过，后面的步骤脚本会拒绝运行。（2026-11-04：base 8.2%，p50c 51.0%，都通过）
 
 ### 2.3 T0+5h 到 T0+16h：让 RQ1 跑一整夜
 
-- [ ] 在 tmux 里按顺序跑。每步跑完，把 `results/` 下新增的小文件提交并推送，再告诉 Claude（2026-11-04 起由 `scripts/run_all.sh` 无人值守地一口气跑完下面三步，出错或超预算就停；Claude 负责把结果拷回本地提交）：
+- [x] 在 tmux 里按顺序跑。每步跑完，把 `results/` 下新增的小文件提交并推送，再告诉 Claude（2026-11-04 起由 `scripts/run_all.sh` 无人值守地一口气跑完下面三步，出错或超预算就停；Claude 负责把结果拷回本地提交。2026-11-04 19:26 全部跑完）：
   1. `python scripts/run_stage.py tau`，然后 `python scripts/choose.py tau --write`：在练习题上定下 D3 的阈值 τ；
   2. `python scripts/run_stage.py select`，然后 `python scripts/choose.py config`：在练习题上选出 base 的最好配置；
   3. `python scripts/run_stage.py rq1`：RQ1 全量（先跑 MATH-500，再跑 GSM8K、IFEval）。

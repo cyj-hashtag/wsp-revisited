@@ -486,7 +486,7 @@ T0 = 用户宣布开工的时刻。
 - [x] tau / select（2026-11-04，`f7493e4` / `3da1ef8`）：三个 τ 在练习 DEV 前 256 题上都答对 138 题 → 按规则取较大的 τ = 0.7（逐题对错并不相同，平手是巧合）；SELECT 上 D3 53.9%、D2b 52.3%、D1 30.5% → 交叉比较用 D3
 - [x] RQ1 中断与修复（2026-11-04）：11:14 p50c 的 D3（MATH-500）一个答案请求带 1,054 个 logit bias，超过 vLLM 0.33.0 的 1,024 上限，引擎退出。`a43c1aa` 用 `_vllm_ext.py` 把上限提到 32,768，自检加第 9 项；重跑自检 9/9 通过，第 1–8 项输出与修复前一致。12:25 断点续跑，之前的结果都不受影响。用户要求记为 prereg **Amendment 2**（同日，见 prereg 末尾，也记了 smoke 闸门一事和 Amendment 1 以来的全部代码改动）
 - [x] IFEval 判分器对照（2026-11-04，`results/ifeval_grader_check.json`，`python scripts/check_ifeval_grader.py`）：重判作者公开的每模型 100 道 IFEval 第一样本，base 100/100、p50c 99/100 与原评测一致；唯一不同的 `ifeval_1389`（全大写 + 字母 o ≥ 40 次）是官方检查器先转小写再计数。起因：base 在 D1 下 IFEval 58.8%，高于 card 的官方分数（thinking 44.0、non-thinking 52.1）；card 的 IFEval 协议 TODO(verify)
-- [ ] M2 RQ1 P0 完成 → `results/rq1_summary.md`
+- [x] M2 RQ1 P0 完成 → `results/rq1_summary.md`（2026-11-04 19:26 生成完毕，`27ab278`；注册分析 `820eaf4`，`python -m wsprev.rq1`）。MATH-500：Δ_D0 42.8、Δ_D1 8.1、Δ_D2b 2.3（95% CI [−1.0, 5.6]）、Δ_D3 16.7 pp；H1、H2 成立，H3、H4 不成立（H4：p = 0.0555，Holm 后 0.111）→ 注册的结论模板："The edit retains a substantial gain under the fair baselines we tested." 交叉比较 Acc(p50c, D0) − Acc(base, D3) = 12.8 pp [9.3, 16.3]。原始记录和全文在本地 `runs/gpushare_2026-11-04/`（不进 git，sha256 见同目录）。`results/smoke/` 已恢复为 100 题版本（`9219118`）
 - [ ] M2 与用户确定叙事分支
 - [ ] M3 RQ2 完成
 - [ ] M4 RQ3 的分析与图完成

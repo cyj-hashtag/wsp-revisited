@@ -13,6 +13,8 @@ Run it once on a new machine, after scripts/setup.sh and before the smoke test.
   7  the D3 breaker end to end (tau = 0, so it fires at the first checkpoint unless the thinking closes before)
   8  logit_bias acts on the logits before temperature, as the presence penalty does; D3 carries the presence penalty
      into the answer as a logit bias (prereg section 3), which is equivalent only then
+  9  logit_bias on more than 30,000 tokens is accepted and applied in full (D3 biases every token id of the thinking;
+     vLLM 0.33.0 allows 1,024 unless wsprev._vllm_ext raises the limit)
 Any FAIL: do not start the smoke test; send the output to Claude. Exit status 1 on FAIL.
 """
 import argparse
@@ -148,6 +150,20 @@ def main():
                                              logit_bias={int(x): b}), use_tqdm=False)
     toks = [o.token_ids[0] for o in out[0].outputs]
     report("8 logit_bias before temperature", *bias_order_verdict(d, b, T, toks.count(x), toks.count(y)))
+
+    # 9: D3 biases every token id of a thinking of up to D3_MAX_THINK tokens; vLLM 0.33.0 allows 1,024 per request
+    # unless wsprev._vllm_ext raises the limit. The greedy token is banned by the last of n biases, so the ban takes
+    # effect only if all n are applied.
+    n = decoding.D3_MAX_THINK + len(close_ids)
+    bias = {t: -decoding.D0.presence_penalty for t in range(n + 1) if t != first}
+    bias[first] = -100.0
+    try:
+        engine.add("b0", ids, dict(greedy, logit_bias=bias))
+        banned = collect(engine, ["b0"])["b0"][0]
+        report("9 logit_bias with many tokens", "PASS" if banned != first else "FAIL",
+               f"{len(bias):,} biased tokens accepted; greedy first token {first} -> {banned}")
+    except Exception as e:  # noqa: BLE001 - reported, and the engine is likely dead
+        report("9 logit_bias with many tokens", "FAIL", f"{len(bias):,} biased tokens: {e!r}")
     return finish(a.out, {"model": name, "gpu": gpu, "versions": versions(), "host": platform.node()})
 
 

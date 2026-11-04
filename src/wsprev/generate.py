@@ -51,8 +51,10 @@ class VLLMEngine:
                  seed=decoding.SEED, extra_args=None):
         from vllm import LLM  # noqa: PLC0415
 
+        # the extension raises vLLM's 1,024-token limit on logit_bias, which D3's carried presence penalty can exceed
         self.llm = LLM(model=str(model_dir), dtype="bfloat16", gpu_memory_utilization=gpu_memory_utilization,
-                       max_model_len=max_model_len, seed=seed, **(extra_args or {}))
+                       max_model_len=max_model_len, seed=seed,
+                       **{"worker_extension_cls": "wsprev._vllm_ext.LogitBiasLimit", **(extra_args or {})})
         self.engine = self.llm.llm_engine
 
     def add(self, rid, prompt_ids, sampling):

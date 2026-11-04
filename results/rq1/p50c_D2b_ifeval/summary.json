@@ -1,0 +1,25 @@
+{
+ "throughput": {
+  "tokens": 272742,
+  "seconds": 75.31959772109985,
+  "tokens_per_s": 3621.1292711617166
+ },
+ "groups": {
+  "p50c/D2b/ifeval": {
+   "problems": 541,
+   "samples": 1082,
+   "accuracy": 0.49815157116451014,
+   "accuracy_se": 0.01868532423383947,
+   "cut_share": 0.0,
+   "mean_tokens": 252.0720887245841,
+   "accuracy_finished": 0.49815157116451014,
+   "accuracy_cut": null,
+   "think_closed_share": null,
+   "breaker_share": 0.0,
+   "breaker_mean_pos": null,
+   "no_answer_share": null,
+   "mean_dup8_tail": 0.007213004223893683,
+   "grade_errors": 0
+  }
+ }
+}

@@ -346,6 +346,7 @@ wsp-revisited/
     data.py                 读 benchmark 和练习集划分
     edits.py                列掩码秩 1 编辑、随机对照、hook 版等价实现
     _vendor.py              载入 third_party 代码
+    _vllm_ext.py            vLLM worker 扩展：把 logit_bias 每请求 1,024 个的上限提到 32,768（D3 的惩罚延续需要；prereg Amendment 2）
     summary.py              读输出目录、汇总指标、校准闸门（summarize.py / run_stage.py / rq1.py 共用）
     rq1.py                  RQ1 的注册分析：配对 bootstrap、Holm、结论措辞；τ 和交叉比较配置的选择规则
     directions.py           RQ2：读激活、求方向、给神经元打分（未写）
@@ -481,6 +482,8 @@ T0 = 用户宣布开工的时刻。
 - [x] M1 GPU 自检 8 项全部 PASS（2026-11-04，`923a8f3`，`results/preflight.json`）
 - [x] M1 冒烟测试（2026-11-04，`d99a6ed`，`results/smoke/`）：base 7.0%（截断 94.0%）；p50c 57.0%（SE 5.0，截断 25.0%），比区间上限 55% 高 2pp，流程因此停下。同 100 题上原评测为 53.2%，逐题配对差 +3.8pp（SE 3.6），按原评测的对题数分层也无系统偏差 → 判为小样本波动。注册的闸门在 500 题的 calib 上（`run_stage.py` 也只在 calib 上强制），所以 `run_all.sh` 改为 smoke 的闸门只作参考（`0bb1d7f`）。实测 token/s：每卡 2,468（base）/ 2,586（p50c）
 - [x] M1 D0 校准通过（2026-11-04，`7633431`，`results/calib/`）：base 8.2%（SE 1.2，截断 92.6%；原评测 7.9%），p50c 51.0%（SE 2.2，截断 29.8%；原评测 48.1%，第三方复现 51.0%）。两卡合计 4,896 token/s；预算检查：已花约 ¥8，剩余 P0 约 15.2 小时 ≈ ¥46
+- [x] tau / select（2026-11-04，`f7493e4` / `3da1ef8`）：三个 τ 在练习 DEV 前 256 题上都答对 138 题 → 按规则取较大的 τ = 0.7（逐题对错并不相同，平手是巧合）；SELECT 上 D3 53.9%、D2b 52.3%、D1 30.5% → 交叉比较用 D3
+- [x] RQ1 中断与修复（2026-11-04）：11:14 p50c 的 D3（MATH-500）一个答案请求带 1,054 个 logit bias，超过 vLLM 0.33.0 的 1,024 上限，引擎退出。`a43c1aa` 用 `_vllm_ext.py` 把上限提到 32,768，自检加第 9 项；重跑自检 9/9 通过，第 1–8 项输出与修复前一致。12:25 断点续跑，之前的结果都不受影响。用户要求记为 prereg **Amendment 2**（同日，见 prereg 末尾，也记了 smoke 闸门一事和 Amendment 1 以来的全部代码改动）
 - [ ] M2 RQ1 P0 完成 → `results/rq1_summary.md`
 - [ ] M2 与用户确定叙事分支
 - [ ] M3 RQ2 完成

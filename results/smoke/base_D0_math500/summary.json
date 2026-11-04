@@ -1,0 +1,39 @@
+{
+ "throughput": {
+  "tokens": 3116739,
+  "seconds": 1262.696495771408,
+  "tokens_per_s": 2468.3199885621907
+ },
+ "groups": {
+  "base/D0/math500": {
+   "problems": 100,
+   "samples": 100,
+   "accuracy": 0.07,
+   "accuracy_se": 0.025643239997624277,
+   "cut_share": 0.94,
+   "mean_tokens": 31167.39,
+   "accuracy_finished": 1.0,
+   "accuracy_cut": 0.010638297872340425,
+   "think_closed_share": 0.06,
+   "breaker_share": 0.0,
+   "breaker_mean_pos": null,
+   "no_answer_share": 0.93,
+   "mean_dup8_tail": 0.91418439496722,
+   "grade_errors": 0,
+   "authors": {
+    "problems": 100,
+    "samples": 400,
+    "accuracy": 0.085,
+    "accuracy_first_sample": 0.06
+   },
+   "gate": {
+    "interval": [
+     0.045,
+     0.115
+    ],
+    "pass": true,
+    "cut_about": 0.93
+   }
+  }
+ }
+}

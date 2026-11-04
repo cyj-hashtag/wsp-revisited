@@ -15,7 +15,7 @@ CLOSE_THINK = "\n</think>\n\n"   # appended to end the thinking from outside (D3
 # D3's threshold on the duplicate-8-gram share. It is chosen among TAU_CANDIDATES on the practice DEV split by the
 # procedure in prereg/criteria.md, before any benchmark run of D3; until then "D3" refuses to run ("D3@<tau>" runs).
 TAU_CANDIDATES = (0.3, 0.5, 0.7)
-D3_TAU: float | None = None
+D3_TAU: float | None = 0.7
 D3_MAX_THINK = 30720
 
 

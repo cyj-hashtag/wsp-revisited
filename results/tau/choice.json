@@ -1,0 +1,10 @@
+{
+ "rule": "most correct answers on the first 256 practice DEV problems (base, 1 sample); ties: larger tau",
+ "problems": 256,
+ "correct": {
+  "0.3": 138,
+  "0.5": 138,
+  "0.7": 138
+ },
+ "choice": 0.7
+}

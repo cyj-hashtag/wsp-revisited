@@ -113,10 +113,27 @@ def bf16_bits(x32) -> np.ndarray:
     return S.bf16_bits(np.asarray(x32, dtype=np.float32))
 
 
-def to_torch_bf16(bits: np.ndarray):
-    import torch  # noqa: PLC0415
+def set_weights(rpc, weights: dict[int, np.ndarray], tmp_dir: Path) -> list:
+    """Swap {layer: bfloat16 bits (uint16)} into the engine (wsprev._vllm_swap): the bits go through .npy files in
+    tmp_dir and the worker gets their paths, since vLLM's RPC does not rebuild arrays or tensors inside untyped
+    arguments. The files are removed afterwards."""
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    paths = {}
+    for l, bits in weights.items():
+        if bits.dtype != np.uint16:
+            raise TypeError(f"layer {l}: bfloat16 bits (uint16) expected, got {bits.dtype}")
+        paths[int(l)] = str(tmp_dir / f"down_proj_{int(l)}_{os.getpid()}.npy")
+        np.save(paths[int(l)], np.ascontiguousarray(bits))
+    try:
+        return rpc("wsprev_set_down_proj", paths)
+    finally:
+        for f in paths.values():
+            Path(f).unlink(missing_ok=True)
 
-    return torch.from_numpy(np.ascontiguousarray(bits).view(np.int16).copy()).view(torch.bfloat16)
+
+def bits_sha256(bits: np.ndarray) -> str:
+    """sha256 of bfloat16 bits, as wsprev._vllm_swap.bits_sha256 computes it in the worker."""
+    return hashlib.sha256(np.ascontiguousarray(bits, dtype=np.uint16).tobytes()).hexdigest()
 
 
 def same_outside(path_a, path_b, ranges, chunk=1 << 24) -> bool:
@@ -344,9 +361,9 @@ def cmd_build(a):
 
 # ---------------------------------------------------------------- the swap runner (GPU, vLLM)
 def run_edits(engine, tok, edits, rows, cfg, out_root: Path, tag: str | None, rpc, log=print):
-    """Generate `rows` (1 sample) with every edit in turn on one engine. edits: [(name, {layer: bf16 tensor} or None,
-    info)]; rpc(method, *args) calls the worker extension (wsprev._vllm_swap.WeightSwap). Output folders
-    out_root/<name>[/<tag>] in wsprev.generate's format; finished samples are skipped on a re-run."""
+    """Generate `rows` (1 sample) with every edit in turn on one engine. edits: [(name, {layer: bfloat16 bits as
+    uint16} or None, info)]; rpc(method, *args) calls the worker extension (wsprev._vllm_swap.WeightSwap). Output
+    folders out_root/<name>[/<tag>] in wsprev.generate's format; finished samples are skipped on a re-run."""
     from . import grade  # noqa: PLC0415
     from .generate import Output, Runner, record_of  # noqa: PLC0415
 
@@ -362,7 +379,7 @@ def run_edits(engine, tok, edits, rows, cfg, out_root: Path, tag: str | None, rp
             continue
         rpc("wsprev_restore")
         if weights:
-            rpc("wsprev_set_down_proj", weights)
+            set_weights(rpc, weights, out_root / "_swap")
         engine.llm.reset_prefix_cache()
         base = {"benchmark": info.get("benchmark"), "model": name, "model_sha": None, "config": cfg.name}
 
@@ -409,11 +426,11 @@ def screen_edits(build_: dict, W: dict, names=None) -> list:
         if name == "base":
             out.append((name, None, {"reference": "base"}))
         elif name == "p50c":
-            out.append((name, {l: to_torch_bf16(bf16_bits(w)) for l, w in p50c_weights().items()},
+            out.append((name, {l: bf16_bits(w) for l, w in p50c_weights().items()},
                         {"reference": "p50c"}))
         else:
             e = edit_by_name(build_, name)
-            out.append((name, {l: to_torch_bf16(bf16_bits(w)) for l, w in edit_weights(build_, e, W).items()}, e))
+            out.append((name, {l: bf16_bits(w) for l, w in edit_weights(build_, e, W).items()}, e))
     return out
 
 
@@ -476,16 +493,14 @@ def cmd_swapcheck(a):
     engine, tok, rpc, base_dir = swap_engine()
     prompts = check_prompts(tok)
     g0 = greedy(engine, prompts)
-    rpc("wsprev_set_down_proj", {l: to_torch_bf16(bf16_bits(w)) for l, w in p50c_weights().items()})
+    set_weights(rpc, {l: bf16_bits(w) for l, w in p50c_weights().items()}, runs_dir() / "_swap")
     engine.llm.reset_prefix_cache()
     g1 = greedy(engine, prompts)
     rpc("wsprev_restore")
     engine.llm.reset_prefix_cache()
     g2 = greedy(engine, prompts)
-    import torch  # noqa: PLC0415
-
     base_w = load_down_proj(base_dir, dr.ASTRA_LAYERS)
-    restored_ok = all(bool(torch.equal(rpc("wsprev_get_down_proj", l)[0].float(), torch.from_numpy(base_w[l])))
+    restored_ok = all(rpc("wsprev_down_proj_sha256", l)[0] == bits_sha256(bf16_bits(base_w[l]))
                       for l in dr.ASTRA_LAYERS)
     ref = load_json(ref_path)["tokens"] if ref_path.exists() else None
     res = {"swapped_equals_p50c_from_disk": g1 == ref if ref is not None else None,

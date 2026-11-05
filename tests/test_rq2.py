@@ -166,28 +166,31 @@ class FakeLLM:
 
 
 def test_run_edits_swaps_weights_per_edit(tmp_path):
-    pytest.importorskip("torch")
-
     def behaviour(pid, seed, is_answer):  # noqa: ARG001
         return iter([*range(1000, 1010), THINK_END, BOX, EOS])
 
     engine = FakeEngine(behaviour, per_step=3)
     engine.llm = FakeLLM()
-    calls = []
+    calls, received = [], {}
+    bits = np.arange(6, dtype=np.uint16).reshape(2, 3)
 
     def rpc(method, *args):
+        # vLLM's RPC only carries plain values intact (a tensor arrived as a list on 2026-11-06): JSON must do
+        json.dumps(args)
         calls.append((method, sorted(args[0]) if args else None))
+        if method == "wsprev_set_down_proj":
+            received.update({int(l): np.load(p) for l, p in args[0].items()})   # the files exist during the call
         return [[]]
 
     rows = [{"id": f"q{i}", "problem": f"problem {i}", "answer": "7"} for i in range(3)]
-    import torch
-
-    edits = [("base", None, {"reference": "base"}), ("e1", {15: torch.zeros(2, 2)}, {"name": "e1"})]
+    edits = [("base", None, {"reference": "base"}), ("e1", {15: bits}, {"name": "e1"})]
     from wsprev import decoding
 
     rq2.run_edits(engine, FakeTok(), edits, rows, decoding.D0, tmp_path, None, rpc, log=lambda *a, **k: None)
     assert calls == [("wsprev_restore", None), ("wsprev_restore", None), ("wsprev_set_down_proj", [15]),
                      ("wsprev_restore", None)]
+    assert np.array_equal(received[15], bits) and received[15].dtype == np.uint16
+    assert not list((tmp_path / "_swap").glob("*.npy"))                 # the files are removed afterwards
     assert engine.llm.resets == 2
     for name in ("base", "e1"):
         recs = [json.loads(x) for x in (tmp_path / name / "records.jsonl").read_text().splitlines()]
@@ -292,3 +295,15 @@ def test_estimate_uses_the_measured_rq1_numbers():
         assert e["yuan_low_high_with_setup"][0] == pytest.approx(e["yuan_low_high"][0] + rq2.SETUP_HOURS * 3.0)
     assert lean["tokens_low_high"][1] < full["tokens_low_high"][0]
     assert lean["tokens_by_stage_low_high"]["rq2-dev"][0] == pytest.approx(160 * 30721.256)
+
+
+def test_set_weights_refuses_non_bits(tmp_path):
+    with pytest.raises(TypeError):
+        rq2.set_weights(lambda *a: None, {15: np.zeros((2, 2), np.float32)}, tmp_path)
+
+
+def test_bits_sha256_matches_the_file_bytes():
+    bits = S.bf16_bits(np.array([[1.0, -2.5], [3.0, 0.0]], np.float32))
+    import hashlib
+
+    assert rq2.bits_sha256(bits) == hashlib.sha256(bits.tobytes()).hexdigest()

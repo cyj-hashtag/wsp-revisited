@@ -5,6 +5,10 @@ The new values are copied into the existing parameter tensors (same storage), as
 do, so captured CUDA graphs see them. wsprev.rq2 resets the prefix cache after every change, and its swap check
 compares an edit applied this way with the same edit loaded from disk before any screening run.
 
+Arguments and results cross vLLM's RPC as plain strings: the weights as paths of .npy files (bfloat16 bit patterns,
+uint16), the check as a sha256. vLLM's msgpack transport does not rebuild tensors inside an untyped RPC argument (a
+tensor arrived as a list on 2026-11-06), so no tensor is sent either way.
+
 It also raises the logit-bias limit (wsprev._vllm_ext), so D3 runs on it as well. Used as
 worker_extension_cls="wsprev._vllm_swap.WeightSwap"; the methods are called through LLM.collective_rpc.
 """
@@ -20,12 +24,22 @@ def _model(worker):
     return model.unwrap() if hasattr(model, "unwrap") else model   # a CUDA-graph wrapper in some vLLM versions
 
 
+def bits_sha256(p) -> str:
+    """sha256 of a bfloat16 tensor's bit patterns (the bytes of the safetensors file)."""
+    import hashlib  # noqa: PLC0415
+
+    import torch  # noqa: PLC0415
+
+    return hashlib.sha256(p.detach().contiguous().view(torch.int16).cpu().numpy().tobytes()).hexdigest()
+
+
 class WeightSwap(LogitBiasLimit):
     """Methods run in vLLM's worker process (self is the worker)."""
 
-    def wsprev_set_down_proj(self, weights: dict) -> list:
-        """weights: {layer: bfloat16 CPU tensor of the parameter's shape}. Keeps the first original of every touched
-        parameter for wsprev_restore. Returns the parameter names."""
+    def wsprev_set_down_proj(self, paths: dict) -> list:
+        """paths: {layer: path of a .npy file with the new weight's bfloat16 bits (uint16, the parameter's shape)}.
+        Keeps the first original of every touched parameter for wsprev_restore. Returns the parameter names."""
+        import numpy as np  # noqa: PLC0415
         import torch  # noqa: PLC0415
 
         model = _model(self)
@@ -34,12 +48,14 @@ class WeightSwap(LogitBiasLimit):
         params = list(model.named_parameters())
         names = []
         with torch.no_grad():
-            for layer, w in sorted(weights.items()):
+            for layer, path in sorted(paths.items(), key=lambda kv: int(kv[0])):
                 name, p = find_down_proj(params, int(layer))
-                if tuple(p.shape) != tuple(w.shape):
-                    raise RuntimeError(f"{name}: shape {tuple(p.shape)} in the engine, {tuple(w.shape)} given")
+                bits = np.load(str(path))
+                if tuple(p.shape) != tuple(bits.shape) or bits.dtype != np.uint16:
+                    raise RuntimeError(f"{name}: shape {tuple(p.shape)} in the engine, {bits.dtype} {bits.shape} given")
+                w = torch.from_numpy(bits.view(np.int16)).view(torch.bfloat16)
                 self._wsprev_orig.setdefault(name, p.detach().clone())
-                p.data.copy_(w.to(device=p.device, dtype=p.dtype))
+                p.data.copy_(w.to(device=p.device))
                 names.append(name)
         torch.cuda.synchronize()
         return names
@@ -56,7 +72,7 @@ class WeightSwap(LogitBiasLimit):
         torch.cuda.synchronize()
         return sorted(orig)
 
-    def wsprev_get_down_proj(self, layer: int):
-        """The current layer-`layer` down_proj weight as a CPU tensor (for checks)."""
+    def wsprev_down_proj_sha256(self, layer: int) -> str:
+        """sha256 of the current layer-`layer` down_proj weight's bits (for checks)."""
         _, p = find_down_proj(list(_model(self).named_parameters()), int(layer))
-        return p.detach().to("cpu").clone()
+        return bits_sha256(p)

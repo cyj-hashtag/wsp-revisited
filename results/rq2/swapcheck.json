@@ -1,0 +1,9 @@
+{
+ "swapped_equals_p50c_from_disk": false,
+ "restored_equals_base": true,
+ "swap_changes_output": true,
+ "restored_weight_bit_identical": true,
+ "prompts": 4,
+ "tokens": 48,
+ "pass": false
+}

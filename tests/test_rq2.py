@@ -307,3 +307,8 @@ def test_bits_sha256_matches_the_file_bytes():
     import hashlib
 
     assert rq2.bits_sha256(bits) == hashlib.sha256(bits.tobytes()).hexdigest()
+
+
+def test_swap_engine_has_no_prefix_cache():
+    # a cached KV block computed with the old weights would survive a swap (the swap check of 2026-11-06)
+    assert rq2.SWAP_ENGINE_ARGS == {"worker_extension_cls": rq2.SWAP_EXT, "enable_prefix_caching": False}

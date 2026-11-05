@@ -397,11 +397,22 @@ def run_edits(engine, tok, edits, rows, cfg, out_root: Path, tag: str | None, rp
     rpc("wsprev_restore")
 
 
+SWAP_ENGINE_ARGS = {
+    "worker_extension_cls": SWAP_EXT,
+    # No prefix caching: cached KV blocks would outlive a weight swap. On 2026-11-06 the swap check failed because a
+    # greedy run after a swap reused the prompt's KV computed with the old weights (LLM.reset_prefix_cache() does not
+    # clear blocks still in use and reports it only through its return value), while teacher-forced logprobs, which
+    # bypass the cache, equalled p50c from disk exactly. Every screening and HOLDOUT prompt is distinct, so the cache
+    # brings nothing there; the final MATH-500 runs use wsprev.generate with RQ1's settings.
+    "enable_prefix_caching": False,
+}
+
+
 def swap_engine():
     from .generate import VLLMEngine, resolve_model  # noqa: PLC0415
 
     _, base_dir, _ = resolve_model("base")
-    engine = VLLMEngine(base_dir, extra_args={"worker_extension_cls": SWAP_EXT})
+    engine = VLLMEngine(base_dir, extra_args=SWAP_ENGINE_ARGS)
 
     def rpc(method, *args):
         return engine.llm.collective_rpc(method, args=args)

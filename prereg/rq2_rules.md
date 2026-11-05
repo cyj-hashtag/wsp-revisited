@@ -113,4 +113,19 @@ One plan is chosen before any RQ2 generation and committed as `results/rq2/plan.
 
 ## Amendments
 
-(none)
+### Amendment 1 (2026-11-06)
+
+Two fixes of the screening engine's code after the swap check (section 5) failed on the GPU machine, before any
+generation with an edit. No rule changes; the stages rq2-dev and rq2-read had finished and are unaffected.
+
+1. vLLM 0.33.0's RPC does not rebuild a tensor inside an untyped argument: the worker received a list and the check
+   stopped with an error (2026-11-06 02:28 UTC+8). The weights now reach the worker as paths of `.npy` files, and the
+   restore check compares sha256 strings (commit `721e715`).
+2. With the swap working, greedy outputs of p50c swapped in still differed from p50c loaded from disk on 2 of the 4
+   check prompts (from token 26 and 29), while teacher-forced logprobs of the same continuations were equal at all
+   192 positions. The prefix cache had kept the prompts' KV computed with the base weights:
+   `LLM.reset_prefix_cache()` does not clear blocks still in use and reports this only in its return value. The
+   screening engine now runs without prefix caching. Every screening and HOLDOUT prompt is distinct, so this changes
+   only memory reuse, not what is computed; the MATH-500 runs (section 7) use `wsprev.generate` with RQ1's settings.
+
+The swap check is run again with both fixes; screening starts only if it passes.

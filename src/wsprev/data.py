@@ -17,6 +17,8 @@ BENCHMARKS = ("math500", "gsm8k", "ifeval")
 RQ1_SAMPLES = {"math500": 2, "gsm8k": 1, "ifeval": 2}   # samples per problem in RQ1 (plan section 3)
 BENCH_SIZES = {"math500": 500, "gsm8k": 1319, "ifeval": 541}
 SPLITS_PATH = REPO / "results" / "splits.json"
+DEV_SCREEN = (448, 512)                  # RQ2's screening problems: DEV[448:512] (prereg/rq2_rules.md section 2)
+DEV_SCREEN_NAME = "practice:dev-screen"
 PRACTICE_FILES = ("gsm8k_train.jsonl", "math_train.jsonl")
 
 
@@ -57,7 +59,9 @@ def user_message(row: dict) -> str:
 
 def load(name: str) -> list[dict]:
     """A benchmark ("math500", "gsm8k", "ifeval") or a practice split ("practice:dev", "practice:holdout",
-    "practice:select")."""
+    "practice:select"; "practice:dev-screen" is DEV[448:512], RQ2's screening problems)."""
+    if name == DEV_SCREEN_NAME:
+        return load_practice_split("dev")[DEV_SCREEN[0]:DEV_SCREEN[1]]
     if name.startswith("practice:"):
         return load_practice_split(name.split(":", 1)[1])
     if name not in BENCHMARKS:

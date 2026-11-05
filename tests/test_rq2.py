@@ -235,8 +235,7 @@ def test_run_stage_rq2(tmp_path, monkeypatch):
                                        "rq2-ctrl-b_D0_math500", "rq2-ctrl-c_D0_math500"]
     assert {j.samples for j in final if j.config == "D3"} == {2}
     pre, par, post = rs.rq2_commands("rq2-screen", ["0", "1"])
-    assert [c[1][-2:] for c in pre] == [["swapcheck", "--reference"], ["wsprev.rq2", "swapcheck"]]
-    assert [c[0] for c in pre] == ["0", "0"] and [c[0] for c in par] == ["0", "1"]
+    assert pre == [] and [c[0] for c in par] == ["0", "1"]            # no swap check (rules Amendment 2)
     assert par[1][1][-3:] == ["screen", "--shard", "1/2"] and post[0][1][-2:] == ["choose", "screen"]
     assert post[0][0] is None
 
@@ -312,3 +311,49 @@ def test_bits_sha256_matches_the_file_bytes():
 def test_swap_engine_has_no_prefix_cache():
     # a cached KV block computed with the old weights would survive a swap (the swap check of 2026-11-06)
     assert rq2.SWAP_ENGINE_ARGS == {"worker_extension_cls": rq2.SWAP_EXT, "enable_prefix_caching": False}
+
+
+class FakeRun:
+    """Records the wsprev.generate commands; checks the model folder exists while it runs; writes `n` records."""
+
+    def __init__(self, n):
+        self.n, self.cmds = n, []
+
+    def __call__(self, cmd, cwd=None):  # noqa: ARG002
+        self.cmds.append(cmd)
+        model, out = Path(cmd[cmd.index("--model") + 1]), Path(cmd[cmd.index("--out") + 1])
+        if model.name not in rq2.REFERENCES:
+            assert (model / rq2.WEIGHTS).exists() and json.loads((model / "wsprev_model.json").read_text())["name"]
+        write_records(out, self.n, 1, 1)
+        return type("R", (), {"returncode": 0})()
+
+
+def test_generate_edits_writes_a_folder_per_edit(tmp_path, monkeypatch):
+    monkeypatch.setenv("WSPREV_MODELS", str(tmp_path / "models"))
+    t = fake_model(tmp_path / "base")
+    W = {l: S.bf16_to_f32(t[dr.TENSOR.format(l)][1]) for l in (15, 19)}
+    b = {"edits": [dr.Edit("e1", "astra", (15, 19), 3584, 6.0).to_dict()],
+         "u": {"15": [1.0] + [0.0] * (D - 1), "19": [0.0, 1.0] + [0.0] * (D - 2)}, "top_columns": {}}
+    run = FakeRun(4)
+    rq2.generate_edits(["base", "e1"], b, W, tmp_path / "base", "D0-8k", "practice:dev-screen", tmp_path / "screen", 4,
+                       runner=run, log=lambda *a, **k: None)
+    assert [c[c.index("--model") + 1] for c in run.cmds][0] == "base"
+    assert run.cmds[1][run.cmds[1].index("--config") + 1] == "D0-8k"
+    assert not (tmp_path / "models" / "rq2-tmp" / "e1").exists()          # removed after the run
+    run.cmds.clear()
+    rq2.generate_edits(["base", "e1"], b, W, tmp_path / "base", "D0-8k", "practice:dev-screen", tmp_path / "screen", 4,
+                       runner=run, log=lambda *a, **k: None)
+    assert run.cmds == []                                                 # finished folders are skipped
+    rq2.generate_edits(["e1"], b, W, tmp_path / "base", "D0", "practice:holdout", tmp_path / "holdout", 2,
+                       tag="s1of2", limit=256, shard="1/2", runner=run, log=lambda *a, **k: None)
+    c = run.cmds[0]
+    assert c[c.index("--shard") + 1] == "1/2" and c[c.index("--limit") + 1] == "256"
+    assert c[c.index("--out") + 1].endswith("s1of2") and "e1-s1of2" in c[c.index("--model") + 1]
+
+
+def test_screening_config_and_split():
+    from wsprev import data, decoding
+
+    cfg = decoding.get("D0-8k")
+    assert cfg.max_tokens == 8192 and cfg.sampling(seed=0)["temperature"] == decoding.D0.temperature
+    assert data.DEV_SCREEN == rq2.SCREEN_PROBLEMS == (448, 512)

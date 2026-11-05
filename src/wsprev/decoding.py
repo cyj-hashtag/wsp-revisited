@@ -86,7 +86,10 @@ D2b = Decoding("D2b", False, 0.7, 0.80, 20, 1.5,
 D4 = replace(D0, name="D4", breaker=Breaker(tau=None, max_think=8192),
              note="D0 + a thinking budget of 8,192 tokens (s1-style budget forcing)")
 
-_FIXED = {c.name: c for c in (D0, D1, D2a, D2b, D4)}
+D0_8K = replace(D0, name="D0-8k", max_tokens=8192,
+                note="RQ2 screening: D0 with at most 8,192 new tokens (prereg/rq2_rules.md section 5); not an RQ1 configuration")
+
+_FIXED = {c.name: c for c in (D0, D1, D2a, D2b, D4, D0_8K)}
 
 
 def d3(tau: float) -> Decoding:

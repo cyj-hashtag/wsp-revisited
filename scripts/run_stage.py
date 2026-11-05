@@ -11,7 +11,7 @@
 RQ2 (python -m wsprev.rq2; the plan and rules: results/rq2/plan.json, prereg/rq2_rules.md):
   rq2-dev      base, D0, practice DEV[:dev_problems], 1 sample                     needs: plan, rules file
   rq2-read     teacher-forced activations (HF), then `rq2 build` (directions, grid)
-  rq2-screen   swap check, then every edit on DEV[448:512] (D0, 8,192 tokens), then `rq2 choose screen`
+  rq2-screen   every edit on DEV[448:512] (D0, 8,192 tokens) as its own model folder, then `rq2 choose screen`
   rq2-holdout  the top edits on HOLDOUT (D0), then `rq2 choose holdout` and `rq2 export` (model folders)
   rq2-final    MATH-500: rq2-auto (D0; D3 in the full plan), the controls (D0)
 Raw output: $WSPREV_RUNS/<group>/<job>/s<i>of<N>/ with the log s<i>of<N>.log next to it.
@@ -36,7 +36,7 @@ from wsprev.summary import summarize  # noqa: E402
 STAGES = ("smoke", "calib", "tau", "select", "rq1", "rq2-dev", "rq2-read", "rq2-screen", "rq2-holdout", "rq2-final")
 RQ2_STEPS = {   # stage: (sharded wsprev.rq2 step, steps before it on the first GPU, CPU steps after it)
     "rq2-read": ("read", [], [["build"]]),
-    "rq2-screen": ("screen", [["swapcheck", "--reference"], ["swapcheck"]], [["choose", "screen"]]),
+    "rq2-screen": ("screen", [], [["choose", "screen"]]),   # no swap check since rules Amendment 2
     "rq2-holdout": ("holdout", [], [["choose", "holdout"], ["export"]]),
 }
 

@@ -175,7 +175,11 @@ git checkout claude/wonderful-archimedes-inple3
 
 ### 3.2 白天：RQ2 + 生存分析
 
-- [ ] 按 Claude 的命令启动 RQ2（自动找方向 → 网格筛选 → 最终评测 → 对照组），同样在 tmux 里。
+- [ ] 按 Claude 的命令启动 RQ2（自动找方向 → 网格筛选 → 最终评测 → 对照组），同样在 tmux 里。开机前先做两件事：
+  - 选方案（精简或完整，费用见 `results/rq2/cost_estimate.json`）；
+  - 让 Claude 提交并推送 `prereg/rq2_rules.md` 和 `results/rq2/plan.json`，**记下提交哈希**：选编辑的规则在任何 RQ2 数据产生之前就定死了。
+  
+  之后在 GPU 机器上按顺序跑五个 stage：`rq2-dev`、`rq2-read`、`rq2-screen`、`rq2-holdout`、`rq2-final`（`python scripts/run_stage.py <stage>`），每跑完一个，让 Claude 把 `results/rq2/` 拷回本地。
 - [ ] 你主导**生存分析**这一节：
   - 理解 Claude 画出的生存曲线 Ŝ(t)：横轴是生成的 token 数，纵轴是"到这时还没结束思考"的比例；
   - 理解准确率分解：Acc = P(结束)·P(对｜结束) + P(截断)·P(对｜截断)；

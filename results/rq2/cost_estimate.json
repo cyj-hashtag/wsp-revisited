@@ -1,0 +1,82 @@
+{
+ "full": {
+  "plan": "full",
+  "gpus": 2,
+  "tokens_per_s_per_gpu": 2332.6882494136003,
+  "tokens_by_stage_low_high": {
+   "rq2-dev": [
+    13763122.688000001,
+    13763122.688000001
+   ],
+   "rq2-screen": [
+    18717081.599999998,
+    22020096
+   ],
+   "rq2-holdout": [
+    27459622.400000002,
+    39323207.68
+   ],
+   "rq2-final": [
+    53771258.0,
+    80121165.0
+   ]
+  },
+  "tokens_low_high": [
+   113711084.688,
+   155227591.368
+  ],
+  "hours_low_high": [
+   5.791324654946207,
+   14.036608687067796
+  ],
+  "yuan_low_high": [
+   17.37397396483862,
+   42.109826061203385
+  ],
+  "yuan_low_high_with_setup": [
+   20.37397396483862,
+   45.109826061203385
+  ],
+  "assumptions": "edit samples as long as p50c's (low) to base's (high) under D0 on MATH-500; screening samples 85-100% of the 8,192-token cap; throughput of the D0 calibration +-30%; engine starts 2 min each; setup.sh 1 h if the data disk was wiped; 3 yuan per hour"
+ },
+ "lean": {
+  "plan": "lean",
+  "gpus": 2,
+  "tokens_per_s_per_gpu": 2332.6882494136003,
+  "tokens_by_stage_low_high": {
+   "rq2-dev": [
+    4915400.96,
+    4915400.96
+   ],
+   "rq2-screen": [
+    6239027.2,
+    7340032
+   ],
+   "rq2-holdout": [
+    5491924.48,
+    7864641.536
+   ],
+   "rq2-final": [
+    17162264.0,
+    24577004.8
+   ]
+  },
+  "tokens_low_high": [
+   33808616.64,
+   44697079.296000004
+  ],
+  "hours_low_high": [
+   1.9484416716274444,
+   4.301823118247842
+  ],
+  "yuan_low_high": [
+   5.8453250148823335,
+   12.905469354743527
+  ],
+  "yuan_low_high_with_setup": [
+   8.845325014882333,
+   15.905469354743527
+  ],
+  "assumptions": "edit samples as long as p50c's (low) to base's (high) under D0 on MATH-500; screening samples 85-100% of the 8,192-token cap; throughput of the D0 calibration +-30%; engine starts 2 min each; setup.sh 1 h if the data disk was wiped; 3 yuan per hour"
+ }
+}

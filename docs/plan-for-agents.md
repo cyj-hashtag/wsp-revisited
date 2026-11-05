@@ -243,6 +243,8 @@ Gemma 基本不循环，只有 8.5% 的回答撞上限。Astra 没能提升它�
 
 全程不调用任何 LLM。**benchmark 绝不参与任何选择。**
 
+> **以 `prereg/rq2_rules.md` 为准**（2026-11-05 写成，任何 RQ2 生成之前）。它把下面的初稿定成了可执行的规则，主要的细化：方向用 DEV 前 `dev_problems` 题，筛选用 DEV[448:512]（不参与求方向）；正常窗口要求 dup8 ≤ 0.3；AUC 交叉拟合；排序规则和并列时的次序；筛选时也跑 base、p50c 作参照（不参选）；精简 / 完整两个方案（表见规则文件第 8 节）。代码：`src/wsprev/rq2.py`、`directions.py`。
+
 1. **划分练习集**：固定种子，从练习题里切出 DEV（512 题）、HOLDOUT（256 题），以及 RQ1 用来选配置的 128 题，三者互不重叠。划分写入 `results/splits.json`。
 2. **准备循环与正常的上下文**：
    - 让 base 按 D0 在 DEV 上生成；
@@ -349,7 +351,9 @@ wsp-revisited/
     _vllm_ext.py            vLLM worker 扩展：把 logit_bias 每请求 1,024 个的上限提到 32,768（D3 的惩罚延续需要；prereg Amendment 2）
     summary.py              读输出目录、汇总指标、校准闸门（summarize.py / run_stage.py / rq1.py 共用）
     rq1.py                  RQ1 的注册分析：配对 bootstrap、Holm、结论措辞；τ 和交叉比较配置的选择规则
-    directions.py           RQ2：读激活、求方向、给神经元打分（未写）
+    directions.py           RQ2：窗口、读激活（HF hook）、求方向、交叉拟合 AUC、给神经元打分、编辑网格、从 p50c 反推 u 和列
+    rq2.py                  RQ2 的各步：plan / read / build / swapcheck / screen / choose / holdout / export / report / estimate
+    _vllm_swap.py           vLLM worker 扩展：原地替换、恢复 down_proj 权重（RQ2 筛选时一个引擎跑完所有编辑）
     survival.py             RQ3：Kaplan–Meier + Greenwood、Nelson–Aalen 与平滑风险、Shapley 分解、配对单元格、预算曲线；读本地 runs/ 的记录 → results/rq3/、results/rq3_summary.md
   scripts/
     env.sh                  GPU 机器上的路径和环境变量（自动找数据盘：AutoDL、恒源云 /hy-tmp、/workspace，否则 ~/wsprev）
@@ -489,8 +493,10 @@ T0 = 用户宣布开工的时刻。
 - [x] IFEval 判分器对照（2026-11-04，`results/ifeval_grader_check.json`，`python scripts/check_ifeval_grader.py`）：重判作者公开的每模型 100 道 IFEval 第一样本，base 100/100、p50c 99/100 与原评测一致；唯一不同的 `ifeval_1389`（全大写 + 字母 o ≥ 40 次）是官方检查器先转小写再计数。起因：base 在 D1 下 IFEval 58.8%，高于 card 的官方分数（thinking 44.0、non-thinking 52.1）；card 的 IFEval 协议 TODO(verify)
 - [x] M2 RQ1 P0 完成 → `results/rq1_summary.md`（2026-11-04 19:26 生成完毕，`27ab278`；注册分析 `820eaf4`，`python -m wsprev.rq1`）。MATH-500：Δ_D0 42.8、Δ_D1 8.1、Δ_D2b 2.3（95% CI [−1.0, 5.6]）、Δ_D3 16.7 pp；H1、H2 成立，H3、H4 不成立（H4：p = 0.0555，Holm 后 0.111）→ 注册的结论模板："The edit retains a substantial gain under the fair baselines we tested." 交叉比较 Acc(p50c, D0) − Acc(base, D3) = 12.8 pp [9.3, 16.3]。原始记录和全文在本地 `runs/gpushare_2026-11-04/`（不进 git，sha256 见同目录）。`results/smoke/` 已恢复为 100 题版本（`9219118`）
 - [ ] M2 与用户确定叙事分支
-- [ ] M3 RQ2 完成
-- [ ] M4 RQ3 的分析与图完成
+- [x] M3 RQ2 代码与 CPU 测试（2026-11-05）：`src/wsprev/directions.py`、`rq2.py`、`_vllm_swap.py`，`scripts/run_stage.py` 加了 rq2-dev / rq2-read / rq2-screen / rq2-holdout / rq2-final 五个 stage；规则文件 `prereg/rq2_rules.md`；38 个新测试（含在一个按 0.8B 层布局的微型随机 Qwen3.5 上验证读激活的 hook，与 `hidden_states[l+1]` 逐元素一致），全部 118 个测试通过。费用估算 `python -m wsprev.rq2 estimate` → `results/rq2/cost_estimate.json`：精简版 34–45M token、1.9–4.3 小时、¥6–13；完整版 114–155M token、5.8–14 小时、¥17–42（数据盘被清空要重跑 setup 时各加约 ¥3）。GPU 上还没跑过：vLLM 原地换权重靠 swapcheck 把关，HF 读 33k token 上下文的显存靠 `--max-context` 兜底
+- [ ] M3 RQ2 在 GPU 上跑完（用户选方案、同意推送规则文件之后）
+- [x] M4 RQ3 生存分析与分解（2026-11-05，代码 `b3c324b` / `6f771db`，结果 `48a8ae3`；`python -m wsprev.survival`，再 `python scripts/plot_rq3.py`；`results/rq3_summary.md`、`results/rq3/`、图在 `results/rq3/figs/`；17 个测试，两次运行输出逐字节相同）。MATH-500 上 Δ 的两因素 Shapley 分解（终止 / 条件正确率，pp）：D0 +53.9 / −11.1，D1 +12.6 / −4.5，D3 +23.3 / −6.6。按"哪个模型正常结束"配对分格：两者都结束的配对贡献 D0 +0.0、D1 −0.7、D3 +0.3，其余几乎全部来自只有 p50c 结束的配对；Shapley 的负的条件项是选择偏差（base 只在简单题上结束）。D3 下 base 熔断 931 次，其中 600 次答案又在 2,048 token 处被截断。另：同一 seed 下 D3 与 D0 的样本并不逐条相同（base 32 条未熔断样本中 0 条长度一致），vLLM 大批量下只保证同分布
+- [ ] M4 待办：用户审阅 RQ3 的定义（事件、删失、"结束"的口径、Acc(L) 的下界性质，见 `survival.py` 文档字符串）；命题 1–3 的推导（用户）；命题 2 的实测（下一层残差变化与 KL，需要 GPU，可并入 RQ2 那次开机）
 - [ ] M5 初稿完成（`paper/`）
 - [ ] M5 用户改写与数字核对完成
 - [ ] M6 邮件原作者 / GitHub 公开 / Zenodo / arXiv

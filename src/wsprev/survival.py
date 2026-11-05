@@ -529,7 +529,7 @@ def markdown(res: dict, meta: dict) -> str:
 
 def write_csv(path: Path, rows: list[dict]):
     with open(path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0]))
+        w = csv.DictWriter(f, fieldnames=list(rows[0]), lineterminator="\n")
         w.writeheader()
         w.writerows(rows)
 
@@ -551,11 +551,11 @@ def main(argv=None):
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     curves, budget_curves = res.pop("curves"), res.pop("budget_curves")
-    (out / "rq3.json").write_text(json.dumps({"meta": meta, **res}, indent=1) + "\n", encoding="utf-8")
+    (out / "rq3.json").write_text(json.dumps({"meta": meta, **res}, indent=1) + "\n", encoding="utf-8", newline="\n")
     write_csv(out / "km_curves.csv", curves)
     write_csv(out / "budget_curves.csv", budget_curves)
     report = markdown(res, meta)
-    Path(a.summary).write_text(report, encoding="utf-8")
+    Path(a.summary).write_text(report, encoding="utf-8", newline="\n")   # LF on every OS: identical files
     print(report)
     print(f"-> {out / 'rq3.json'}, {out / 'km_curves.csv'}, {out / 'budget_curves.csv'}, {a.summary}")
 

@@ -1,0 +1,67 @@
+{
+ "info": {
+  "model": "base",
+  "gpu": {
+   "name": "NVIDIA GeForce RTX 3090",
+   "count": 1
+  },
+  "versions": {
+   "python": "3.11.12",
+   "vllm": "0.33.0",
+   "transformers": "5.20.2",
+   "torch": "2.14.0",
+   "math-verify": "0.9.0",
+   "numpy": "2.3.5",
+   "nltk": "3.10.4",
+   "langdetect": "1.0.9"
+  },
+  "host": "I2c2b780b5603001aef"
+ },
+ "checks": [
+  {
+   "check": "1 GPU",
+   "status": "PASS",
+   "detail": "{'name': 'NVIDIA GeForce RTX 3090', 'count': 1} | {'python': '3.11.12', 'vllm': '0.33.0', 'transformers': '5.20.2', 'torch': '2.14.0', 'math-verify': '0.9.0', 'numpy': '2.3.5', 'nltk': '3.10.4', 'langdetect': '1.0.9'}"
+  },
+  {
+   "check": "2 tokenizer and prompt",
+   "status": "PASS",
+   "detail": "</think> = 248069, CLOSE_THINK -> [198, 248069, 271], prompt ends '|im_end|>\\n<|im_start|>assistant\\n<think>\\n'"
+  },
+  {
+   "check": "3 grading in the main thread",
+   "status": "PASS",
+   "detail": "1/2 = \\dfrac{1}{2} and 2 != 3"
+  },
+  {
+   "check": "4 logit_bias",
+   "status": "PASS",
+   "detail": "greedy first token 8160, banned -> 760"
+  },
+  {
+   "check": "5 abort",
+   "status": "PASS",
+   "detail": "engine idle after 0 steps"
+  },
+  {
+   "check": "6 seeds",
+   "status": "PASS",
+   "detail": "n=2/seed 0 equals seeds 0 and 1"
+  },
+  {
+   "check": "7 D3 breaker end to end",
+   "status": "PASS",
+   "detail": "[{'problem_id': 'test/precalculus/807.json', 'loop_triggered': True, 'trigger_pos': 1024, 'answer_tokens': 459, 'n_gen_tokens': 1486, 'finish_reason': 'stop', 'think_closed': False}, {'problem_id': 'test/intermediate_algebra/1994.json', 'loop_triggered': True, 'trigger_pos': 1024, 'answer_tokens': 2048, 'n_gen_tokens': 3075, 'finish_reason': 'length', 'think_closed': False}] in 12 s"
+  },
+  {
+   "check": "8 logit_bias before temperature",
+   "status": "PASS",
+   "detail": "log(n_x/n_y) = -2.11 +- 0.07 (n_x 215, n_y 1785); predicted -2.00 if the bias acts before temperature, -0.13 if after"
+  },
+  {
+   "check": "9 logit_bias with many tokens",
+   "status": "PASS",
+   "detail": "30,724 biased tokens accepted; greedy first token 8160 -> 760"
+  }
+ ]
+}

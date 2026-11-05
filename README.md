@@ -18,6 +18,9 @@ Work in progress.
 - `scripts/`: GPU-machine entry points (`setup.sh`, `check_vllm.py`, `run_stage.py`, `choose.py`) and helpers
   (`build_p50c.py`, `verify_model.py`, `prepare_data.py`, `make_splits.py`, `summarize.py`).
 - `src/wsprev/rq1.py`: the registered RQ1 analysis (paired bootstrap, Holm correction, fixed conclusion wording).
+- `src/wsprev/survival.py`: RQ3, not registered: Kaplan-Meier and Nelson-Aalen of the thinking length, the
+  decomposition of the edit effect into termination and conditional accuracy, accuracy within a token budget
+  (`python -m wsprev.survival`, then `python scripts/plot_rq3.py` for the figures).
 - `third_party/`: the original authors' grading and edit-rebuild scripts (unmodified, MIT) and the official IFEval
   checkers (Apache-2.0, two small documented changes).
 - `results/`: small summaries only (`splits.json`: the practice-problem splits).

@@ -9,6 +9,9 @@ description = "Revisiting Experiment 8 of 'Sparks of Weight-Space Programming' (
 requires-python = ">=3.10"
 dependencies = ["numpy", "scipy"]
 
+[project.optional-dependencies]
+plots = ["matplotlib"]   # scripts/plot_rq3.py
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

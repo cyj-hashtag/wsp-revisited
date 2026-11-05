@@ -350,7 +350,7 @@ wsp-revisited/
     summary.py              读输出目录、汇总指标、校准闸门（summarize.py / run_stage.py / rq1.py 共用）
     rq1.py                  RQ1 的注册分析：配对 bootstrap、Holm、结论措辞；τ 和交叉比较配置的选择规则
     directions.py           RQ2：读激活、求方向、给神经元打分（未写）
-    survival.py             Kaplan–Meier、分解（未写）
+    survival.py             RQ3：Kaplan–Meier + Greenwood、Nelson–Aalen 与平滑风险、Shapley 分解、配对单元格、预算曲线；读本地 runs/ 的记录 → results/rq3/、results/rq3_summary.md
   scripts/
     env.sh                  GPU 机器上的路径和环境变量（自动找数据盘：AutoDL、恒源云 /hy-tmp、/workspace，否则 ~/wsprev）
     setup.sh                一次性准备（平台无关）：检查、环境、作者日志仓库、模型下载与哈希校验、重建 p50c、benchmark
@@ -364,6 +364,7 @@ wsp-revisited/
     prepare_data.py         下载 MATH-500 / GSM8K / IFEval，记录数据集 revision 和哈希
     make_splits.py          练习集划分 → results/splits.json（已生成并提交）
     summarize.py            汇总准确率、截断率等，对照原文同题结果，检查校准闸门
+    plot_rq3.py             RQ3 的图：只读 results/rq3/ 下的小文件 → results/rq3/figs/（需要 matplotlib）
   results/                  只放小型汇总（summary.json、每题一行的 CSV）；大文件不进库
   paper/                    LaTeX 源文件
   tests/

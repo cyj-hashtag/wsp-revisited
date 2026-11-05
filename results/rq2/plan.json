@@ -1,0 +1,36 @@
+{
+ "plan": "full",
+ "dev_problems": 448,
+ "max_pairs": 256,
+ "ks": [
+  32,
+  64,
+  128,
+  3584
+ ],
+ "alphas": [
+  1,
+  2,
+  4,
+  6,
+  8
+ ],
+ "top": 5,
+ "holdout_problems": 256,
+ "final": [
+  [
+   "D0",
+   1
+  ],
+  [
+   "D3",
+   2
+  ]
+ ],
+ "controls": [
+  "a",
+  "b",
+  "c"
+ ],
+ "control_problems": 500
+}

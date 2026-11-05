@@ -229,6 +229,9 @@ def dev_records(dev_runs: Path, ids: list[str]) -> tuple[list[dict], dict]:
 def cmd_read(a):
     p = plan()
     i, k = shard_of(a.shard)
+    if (runs_dir() / "read" / f"s{i}of{k}.npz").exists():
+        print(f"read before: {runs_dir() / 'read' / f's{i}of{k}.npz'}")
+        return
     rows = data.load("practice:dev")[:p["dev_problems"]]
     by_id = {r["id"]: r for r in rows}
     recs, texts = dev_records(runs_dir() / "base_D0_practice-dev", [r["id"] for r in rows])

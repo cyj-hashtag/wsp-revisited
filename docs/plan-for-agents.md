@@ -353,7 +353,7 @@ wsp-revisited/
     rq1.py                  RQ1 的注册分析：配对 bootstrap、Holm、结论措辞；τ 和交叉比较配置的选择规则
     directions.py           RQ2：窗口、读激活（HF hook）、求方向、交叉拟合 AUC、给神经元打分、编辑网格、从 p50c 反推 u 和列
     rq2.py                  RQ2 的各步：plan / read / build / swapcheck / screen / choose / holdout / export / report / estimate
-    _vllm_swap.py           vLLM worker 扩展：原地替换、恢复 down_proj 权重（RQ2 筛选时一个引擎跑完所有编辑）
+    _vllm_swap.py           vLLM worker 扩展：原地替换、恢复 down_proj 权重（RQ2 筛选原本打算用它一个引擎跑完所有编辑；规则 Amendment 2 后不再使用，只留作失败记录）
     survival.py             RQ3：Kaplan–Meier + Greenwood、Nelson–Aalen 与平滑风险、Shapley 分解、配对单元格、预算曲线；读本地 runs/ 的记录 → results/rq3/、results/rq3_summary.md
   scripts/
     env.sh                  GPU 机器上的路径和环境变量（自动找数据盘：AutoDL、恒源云 /hy-tmp、/workspace，否则 ~/wsprev）
@@ -494,8 +494,12 @@ T0 = 用户宣布开工的时刻。
 - [x] M2 RQ1 P0 完成 → `results/rq1_summary.md`（2026-11-04 19:26 生成完毕，`27ab278`；注册分析 `820eaf4`，`python -m wsprev.rq1`）。MATH-500：Δ_D0 42.8、Δ_D1 8.1、Δ_D2b 2.3（95% CI [−1.0, 5.6]）、Δ_D3 16.7 pp；H1、H2 成立，H3、H4 不成立（H4：p = 0.0555，Holm 后 0.111）→ 注册的结论模板："The edit retains a substantial gain under the fair baselines we tested." 交叉比较 Acc(p50c, D0) − Acc(base, D3) = 12.8 pp [9.3, 16.3]。原始记录和全文在本地 `runs/gpushare_2026-11-04/`（不进 git，sha256 见同目录）。`results/smoke/` 已恢复为 100 题版本（`9219118`）
 - [ ] M2 与用户确定叙事分支
 - [x] M3 RQ2 代码与 CPU 测试（2026-11-05）：`src/wsprev/directions.py`、`rq2.py`、`_vllm_swap.py`，`scripts/run_stage.py` 加了 rq2-dev / rq2-read / rq2-screen / rq2-holdout / rq2-final 五个 stage；规则文件 `prereg/rq2_rules.md`；38 个新测试（含在一个按 0.8B 层布局的微型随机 Qwen3.5 上验证读激活的 hook，与 `hidden_states[l+1]` 逐元素一致），全部 118 个测试通过。费用估算 `python -m wsprev.rq2 estimate` → `results/rq2/cost_estimate.json`：精简版 34–45M token、1.9–4.3 小时、¥6–13；完整版 114–155M token、5.8–14 小时、¥17–42（数据盘被清空要重跑 setup 时各加约 ¥3）。GPU 上还没跑过：vLLM 原地换权重靠 swapcheck 把关，HF 读 33k token 上下文的显存靠 `--max-context` 兜底
-- [x] M3 RQ2 规则与方案（2026-11-05，任何 RQ2 生成之前）：规则文件 `prereg/rq2_rules.md` 在 `9964c0c`；用户选**完整版**，`results/rq2/plan.json` 在 `2511b27`；用户同意后推送到 `origin/claude/gpushare`（`2511b27`，未合并进 `main`）。无人值守脚本 `scripts/run_rq2.sh`（`7cc5de4`，未推送）
-- [ ] M3 RQ2 在 GPU 上跑完
+- [x] M3 RQ2 规则与方案（2026-11-05，任何 RQ2 生成之前）：规则文件 `prereg/rq2_rules.md` 在 `9964c0c`；用户选**完整版**，`results/rq2/plan.json` 在 `2511b27`；用户同意后推送到 `origin/claude/gpushare`（`2511b27`，未合并进 `main`）。无人值守脚本 `scripts/run_rq2.sh`（`7cc5de4`）
+- [x] M3 rq2-dev、rq2-read（2026-11-06，`a68d618`、`53fc69e`；恒源云重新开的 2 × 3090，自检 9/9，`results/rq2/preflight.json`）：base 在 DEV 前 448 题上 12.3%（SE 1.6，截断 88.2%，`results/rq2-dev/`）。256 对窗口；AUC 在第 8–22 层全是 1.0，所以 AUC 层 {21, 22} 实际由并列时的分离度决定（29.6、27.5；第 14、18 层 27.4、27.3），见 `results/rq2/build.json`
+- [x] M3 swap check 两次失败（2026-11-06）→ 规则 Amendment 1（`98a6e45`）、2（`06b7fc6`）：放弃原地换权重，每个编辑写一个模型文件夹、起一个引擎；失败记录 `results/rq2/swapcheck.json`（`3ef75ed`）。02:28–07:06 CST 排查，约 4.6 小时
+- [x] M3 rq2-screen（2026-11-06 07:06–09:03 CST，`7b3fd6d`，`results/rq2/screen.json`）：64 题、上限 8,192 token，base 答对 5 题、p50c 14 题；40 个编辑 3–10 题，平均 6.05（标准误约 2.4 题，排名大多在噪声内）。前 5 名全在 Astra 的层 {15, 19}：k64-a2（10）、k64-a6（9）、k128-a6（9）、k64-a1（8）、k128-a1（8）；AUC 层最好 8 题，未进决赛。所以 rq2-auto 必定用 Astra 的层，论文要写明这一点。共 21.07M token，纯生成 1.22 GPU 小时（每个编辑重启引擎约 4 分钟，两卡墙钟 1 小时 57 分）
+- [x] M3 推送（2026-11-06，用户同意）：以上提交和规则 Amendment 1、2 随本进度提交推到 `origin/claude/gpushare`，早于 rq2-final 第一次碰 benchmark；未合并进 `main`
+- [ ] M3 RQ2 在 GPU 上跑完（进行中：rq2-holdout 自 2026-11-06 09:03 CST 起，之后由 `scripts/run_rq2.sh` 自动进入 rq2-final）
 - [x] M4 RQ3 生存分析与分解（2026-11-05，代码 `b3c324b` / `6f771db`，结果 `48a8ae3`；`python -m wsprev.survival`，再 `python scripts/plot_rq3.py`；`results/rq3_summary.md`、`results/rq3/`、图在 `results/rq3/figs/`；17 个测试，两次运行输出逐字节相同）。MATH-500 上 Δ 的两因素 Shapley 分解（终止 / 条件正确率，pp）：D0 +53.9 / −11.1，D1 +12.6 / −4.5，D3 +23.3 / −6.6。按"哪个模型正常结束"配对分格：两者都结束的配对贡献 D0 +0.0、D1 −0.7、D3 +0.3，其余几乎全部来自只有 p50c 结束的配对；Shapley 的负的条件项是选择偏差（base 只在简单题上结束）。D3 下 base 熔断 931 次，其中 600 次答案又在 2,048 token 处被截断。另：同一 seed 下 D3 与 D0 的样本并不逐条相同（base 32 条未熔断样本中 0 条长度一致），vLLM 大批量下只保证同分布
 - [ ] M4 待办：用户审阅 RQ3 的定义（事件、删失、"结束"的口径、Acc(L) 的下界性质，见 `survival.py` 文档字符串）；命题 1–3 的推导（用户）；命题 2 的实测（下一层残差变化与 KL，需要 GPU，可并入 RQ2 那次开机）
 - [ ] M5 初稿完成（`paper/`）
